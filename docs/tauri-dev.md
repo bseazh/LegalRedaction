@@ -15,6 +15,14 @@ npm install -D @tauri-apps/cli
 
 ## 启动本地服务和界面
 
+如果 macOS 的 `TMPDIR` 指向无权限的 `/var/folders/...` 路径，先在两个终端都执行：
+
+```bash
+mkdir -p /tmp/legalredaction-tmp
+chmod 700 /tmp/legalredaction-tmp
+export TMPDIR=/tmp/legalredaction-tmp
+```
+
 终端 1：
 
 ```bash
@@ -31,4 +39,3 @@ npm run tauri dev
 ```
 
 原型支持 TXT、DOCX、有文本层 PDF；模型候选必须点击确认后才会导出。原始文件不会被覆盖。
-
