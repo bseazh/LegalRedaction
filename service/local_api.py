@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import base64
+import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -45,12 +47,27 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
-        if self.path != "/analyze": self.send_json(404, {"error": "not found"}); return
+        if self.path not in {"/analyze", "/analyze-upload"}: self.send_json(404, {"error": "not found"}); return
         try:
             length = int(self.headers.get("Content-Length", "0")); payload = json.loads(self.rfile.read(length))
-            path = Path(str(payload["path"])).expanduser().resolve()
-            if not path.is_file(): raise ValueError("file not found")
-            self.send_json(200, analyze(path))
+            if self.path == "/analyze-upload":
+                name = Path(str(payload.get("name", "upload.txt"))).name
+                suffix = Path(name).suffix.lower()
+                if suffix not in {".txt", ".md", ".eml", ".docx", ".pdf"}: raise ValueError("unsupported file type")
+                raw = base64.b64decode(str(payload["data"]), validate=True)
+                with tempfile.NamedTemporaryFile(prefix="legalredaction-", suffix=suffix, delete=False) as temporary:
+                    temporary.write(raw); temp_path = Path(temporary.name)
+                try:
+                    result = analyze(temp_path)
+                    result["name"] = name
+                    result["path"] = "local-upload"
+                finally:
+                    temp_path.unlink(missing_ok=True)
+                self.send_json(200, result)
+            else:
+                path = Path(str(payload["path"])).expanduser().resolve()
+                if not path.is_file(): raise ValueError("file not found")
+                self.send_json(200, analyze(path))
         except Exception as exc:
             self.send_json(400, {"error": str(exc)})
 
@@ -63,4 +80,3 @@ def main() -> None:
 
 
 if __name__ == "__main__": main()
-
