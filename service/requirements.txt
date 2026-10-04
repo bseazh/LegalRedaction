@@ -1,0 +1,3 @@
+# P0 intentionally uses only Python standard library and the system pdftotext command.
+# Model/OCR dependencies will be added only after the P0 evaluation.
+

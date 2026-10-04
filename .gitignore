@@ -1,0 +1,11 @@
+models/**/*.safetensors
+models/**/*.bin
+models/**/*.gguf
+test-results/
+.venv-mlx/
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+__pycache__/
+*.pyc
+.DS_Store
