@@ -33,6 +33,12 @@ _lock = threading.Lock()
 _inference_lock = threading.Lock()
 NER_CHUNK_CHARS = 2400
 NER_CHUNK_OVERLAP = 200
+POLICY = {
+    "PERSON": "must_redact", "PHONE": "must_redact", "ID_NUMBER": "must_redact", "BANK_CARD": "must_redact", "ADDRESS": "must_redact", "EMAIL": "must_redact",
+    "ORGANIZATION": "manual_review", "DEPARTMENT": "manual_review", "PROJECT": "manual_review", "COURT": "manual_review", "LAW_FIRM": "manual_review",
+    "PLAINTIFF": "must_redact", "DEFENDANT": "must_redact", "APPLICANT": "must_redact", "RESPONDENT": "must_redact", "ATTORNEY": "must_redact", "LEGAL_REPRESENTATIVE": "must_redact",
+    "CASE_NUMBER": "do_not_redact", "CONTRACT_NUMBER": "do_not_redact",
+}
 
 
 def backend() -> Qwen3NerBackend:
@@ -77,7 +83,8 @@ def analyze(path: Path) -> dict:
     logger.info("ner_done name=%s entities=%d elapsed_ms=%d", path.name, len(ner), round((time.perf_counter() - started) * 1000))
     entities = merge_entities(rules, ner)
     logger.info("analyze_done name=%s entities=%d elapsed_ms=%d", path.name, len(entities), round((time.perf_counter() - started) * 1000))
-    return {"path": str(path), "name": path.name, "text": text, "entities": [entity.__dict__ for entity in entities], "supported_types": list(TYPE_NAMES)}
+    payload_entities = [entity.__dict__ | {"policy": POLICY.get(entity.type, "manual_review")} for entity in entities]
+    return {"path": str(path), "name": path.name, "text": text, "entities": payload_entities, "supported_types": list(TYPE_NAMES), "policy": POLICY}
 
 
 class Handler(BaseHTTPRequestHandler):

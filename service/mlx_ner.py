@@ -13,14 +13,19 @@ from .redaction_core import Entity
 TYPE_NAMES = {
     "PERSON": "姓名",
     "ORGANIZATION": "机构",
-    "PHONE": "电话",
-    "ID_NUMBER": "身份证号",
-    "BANK_CARD": "银行卡号",
     "ADDRESS": "地址",
-    "CASE_NUMBER": "案号",
-    "CONTRACT_NUMBER": "合同编号",
-    "EMAIL": "邮箱",
+    "DEPARTMENT": "部门",
+    "PROJECT": "项目名",
+    "COURT": "法院",
+    "LAW_FIRM": "律师事务所",
+    "PLAINTIFF": "原告",
+    "DEFENDANT": "被告",
+    "APPLICANT": "申请人",
+    "RESPONDENT": "被申请人",
+    "ATTORNEY": "代理人",
+    "LEGAL_REPRESENTATIVE": "法定代表人",
 }
+ROLE_LABELS = {key: value for key, value in TYPE_NAMES.items() if key in {"PLAINTIFF", "DEFENDANT", "APPLICANT", "RESPONDENT", "ATTORNEY", "LEGAL_REPRESENTATIVE"}}
 
 
 class Qwen3NerBackend:
@@ -31,9 +36,11 @@ class Qwen3NerBackend:
 
     def recognize(self, text: str, entity_types: list[str]) -> list[Entity]:
         requested = [TYPE_NAMES.get(item, item) for item in entity_types]
-        body = ("从文本中提取指定类型的实体。只返回 JSON 对象，不要解释、不要思考过程、不要 Markdown。"
+        body = ("你是中文法律文书实体抽取器。请提取文本中所有出现的实体，不要只返回代表性实体，也不要遗漏重复出现的同一姓名。"
+                "机构、法院、律师事务所、部门、项目名必须分开。原告/被告/申请人/被申请人/代理人/法定代表人等法律角色的值只返回对应的人名或机构名，不要把角色词混入值。"
+                "只返回 JSON 对象，不要解释、不要思考过程、不要 Markdown。"
                 f"JSON 的键只能是这些类型：{json.dumps(requested, ensure_ascii=False)}。"
-                "每个键的值必须是字符串数组；没有实体时返回空数组。\n"
+                "每个键的值必须是字符串数组；没有实体时返回空数组；同一实体在文本中出现多次时数组中重复返回。\n"
                 f"文本：{text}")
         try:
             prompt = self.tokenizer.apply_chat_template([{"role": "user", "content": body}], tokenize=False, add_generation_prompt=True, enable_thinking=False)
@@ -65,6 +72,10 @@ class Qwen3NerBackend:
                 if len(starts) != 1:
                     continue
                 start = starts[0]
+                if type_id in ROLE_LABELS:
+                    context = text[max(0, start - 8):min(len(text), start + len(value) + 8)]
+                    if ROLE_LABELS[type_id] not in context:
+                        continue
                 entities.append(Entity(type_id, value, start, start + len(value), 0.9, "ner"))
         return entities
 
