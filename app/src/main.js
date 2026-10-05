@@ -20,14 +20,14 @@ async function analyze(file) {
     let binary = ''; for (const byte of bytes) binary += String.fromCharCode(byte);
     $('status').textContent = ' 正在提取文本…'; setProgress('正在提取文本…',30);
     phaseTimer=setTimeout(()=>{ $('status').textContent=' 模型识别中，预计需要几十秒…'; setProgress('模型识别中（可能需要几十秒）…',70); },1500);
-    const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),120000);
+    const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),600000);
     let response; try { response=await fetch(api + '/analyze-upload', {method:'POST', headers:{'Content-Type':'application/json','X-Request-ID':requestId}, body:JSON.stringify({name:file.name, data:btoa(binary)}), signal:controller.signal}); } finally { clearTimeout(timeout); }
     const responseId = response.headers.get('X-Request-ID') || requestId;
     if (!response.ok) { const detail=await response.text(); console.error('[LegalRedaction]', 'analyze_error', {requestId:responseId,status:response.status,detail}); throw new Error(`请求失败（HTTP ${response.status}，ID ${responseId}）：${detail}`); }
     result = await response.json(); $('fileName').textContent = result.name; renderText(); render(); $('status').textContent = ` 识别完成：${result.entities.length} 个候选，请确认底色标记后导出`; setProgress(`识别完成：${result.entities.length} 个候选，等待人工确认`,100);
     console.info('[LegalRedaction]', 'analyze_done', {requestId:responseId, chars:result.text.length, entities:result.entities.length});
   } catch(error) {
-    const detail=error.name==='AbortError' ? `处理超过 120 秒（请求 ID ${requestId}）` : (error.message==='Load failed' ? `无法连接本地服务（请求 ID ${requestId}）。请确认 Tauri 已完整重启，并检查 8766 端口。` : error.message);
+    const detail=error.name==='AbortError' ? `模型处理超过 10 分钟（请求 ID ${requestId}）。文件过长或分块过多，请查看后端日志。` : (error.message==='Load failed' ? `无法连接本地服务（请求 ID ${requestId}）。请确认 Tauri 已完整重启，并检查 8766 端口。` : error.message);
     console.error('[LegalRedaction]', 'ui_error', {requestId,error}); $('status').textContent=' 识别失败：'+detail; setProgress(`失败：${detail}`,0); throw error;
   } finally { clearTimeout(phaseTimer); input.disabled=!serviceReady; }
 }

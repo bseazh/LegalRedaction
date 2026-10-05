@@ -31,8 +31,8 @@ if not logger.handlers:
 _backend = None
 _lock = threading.Lock()
 _inference_lock = threading.Lock()
-NER_CHUNK_CHARS = 2400
-NER_CHUNK_OVERLAP = 200
+NER_CHUNK_CHARS = 6000
+NER_CHUNK_OVERLAP = 300
 POLICY = {
     "PERSON": "must_redact", "PHONE": "must_redact", "ID_NUMBER": "must_redact", "BANK_CARD": "must_redact", "ADDRESS": "must_redact", "EMAIL": "must_redact",
     "ORGANIZATION": "manual_review", "DEPARTMENT": "manual_review", "PROJECT": "manual_review", "COURT": "manual_review", "LAW_FIRM": "manual_review",
@@ -121,11 +121,13 @@ class Handler(BaseHTTPRequestHandler):
                     result["path"] = "local-upload"
                 finally:
                     temp_path.unlink(missing_ok=True)
-                self.send_json(200, result)
+        self.send_json(200, result)
             else:
                 path = Path(str(payload["path"])).expanduser().resolve()
                 if not path.is_file(): raise ValueError("file not found")
                 self.send_json(200, analyze(path))
+        except BrokenPipeError:
+            logger.warning("request_client_disconnected id=%s", request_id)
         except Exception as exc:
             logger.error("request_error id=%s type=%s error=%s\n%s", request_id, type(exc).__name__, exc, traceback.format_exc())
             self.send_json(400, {"error": str(exc)})
