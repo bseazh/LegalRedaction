@@ -10,7 +10,7 @@ from mlx_lm.generate import stream_generate
 from mlx_lm.sample_utils import greedy_sampler
 
 
-MODEL = Path(__file__).resolve().parents[1] / "models/has/HaS_Text_0209_0.6B"
+MODEL = Path(__file__).resolve().parents[1] / "models/qwen3/Qwen3-1.7B-bf16"
 TEXT = "原告张伟委托北京明德律师事务所，联系电话13800138000，案号（2025）粤0305民初123号。"
 TYPES = ["姓名", "机构", "电话", "案号"]
 EXPECTED = {
@@ -22,8 +22,7 @@ EXPECTED = {
 
 
 def prompt_for(text: str) -> str:
-    # HaS's chat template is required; raw completion causes the base model to
-    # continue the document instead of returning NER JSON.
+    # Qwen3 should use its chat template with thinking disabled in the runtime backend.
     body = f"Recognize the following entity types in the text.\nSpecified types:{json.dumps(TYPES, ensure_ascii=False)}\n<text>{text}</text>"
     return f"<|im_start|>user\n{body}<|im_end|>\n<|im_start|>assistant\n"
 
@@ -116,4 +115,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

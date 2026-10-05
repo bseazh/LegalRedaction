@@ -4,7 +4,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from .mlx_ner import MlxNerBackend
+from .mlx_ner import Qwen3NerBackend
 from .ner import merge_entities
 from .redaction_core import Entity, detect_entities
 
@@ -28,7 +28,7 @@ def metrics(gold: list[dict], prediction: list[Entity]) -> dict:
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     samples = [json.loads(line) for line in (root / "test-data/ner-gold.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
-    backend = MlxNerBackend(root / "models/has/HaS_Text_0209_0.6B")
+    backend = Qwen3NerBackend(root / "models/qwen3/Qwen3-1.7B-bf16")
     totals = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
     details = []
     for sample in samples:
@@ -49,7 +49,7 @@ def main() -> int:
         result["precision"] = tp / (tp + fp) if tp + fp else 1.0
         result["recall"] = tp / (tp + fn) if tp + fn else 1.0
         result["f1"] = 2 * result["precision"] * result["recall"] / (result["precision"] + result["recall"]) if result["precision"] + result["recall"] else 0.0
-    report = {"model": str(root / "models/has/HaS_Text_0209_0.6B"), "variants": dict(totals), "samples": details, "note": "Synthetic gold corpus only; all NER values are offset-validated before scoring."}
+    report = {"model": str(root / "models/qwen3/Qwen3-1.7B-bf16"), "variants": dict(totals), "samples": details, "note": "Synthetic gold corpus only; all NER values are offset-validated before scoring."}
     output = root / "test-results/ner-m2-fp16-comparison.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

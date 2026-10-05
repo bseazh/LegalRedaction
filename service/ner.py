@@ -23,7 +23,7 @@ class RuleBackend:
 
 
 class OpenAICompatibleBackend:
-    """Adapter for a local HaS/vLLM-compatible chat endpoint.
+    """Adapter for a local Qwen3/vLLM-compatible chat endpoint.
 
     The model is instructed to return JSON only. This adapter deliberately does
     not assume a particular model name or runtime, so a future Transformers
@@ -77,4 +77,3 @@ def merge_entities(rule_entities: list[Entity], ner_entities: list[Entity]) -> l
             continue
         selected.append(entity)
     return sorted(selected, key=lambda item: item.start)
-

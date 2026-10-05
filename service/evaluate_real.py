@@ -55,8 +55,8 @@ def main() -> int:
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 2
-    from .mlx_ner import MlxNerBackend
-    backend = MlxNerBackend(root / "models/has/HaS_Text_0209_0.6B")
+    from .mlx_ner import Qwen3NerBackend
+    backend = Qwen3NerBackend(root / "models/qwen3/Qwen3-1.7B-bf16")
     totals = defaultdict(lambda: Counter())
     by_type = defaultdict(lambda: defaultdict(Counter))
     for record in records:

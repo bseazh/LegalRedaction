@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .mlx_ner import MlxNerBackend, TYPE_NAMES
+from .mlx_ner import Qwen3NerBackend, TYPE_NAMES
 from .redaction_core import detect_entities, extract_text
 
 
@@ -23,7 +23,7 @@ SOURCES = [
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    backend = MlxNerBackend(root / "models/has/HaS_Text_0209_0.6B")
+    backend = Qwen3NerBackend(root / "models/qwen3/Qwen3-1.7B-bf16")
     requested = list(TYPE_NAMES)
     output = root / "test-results/real-annotation-candidates.jsonl"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -55,4 +55,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

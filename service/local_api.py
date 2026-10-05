@@ -12,13 +12,13 @@ from logging.handlers import RotatingFileHandler
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from .mlx_ner import MlxNerBackend, TYPE_NAMES
+from .mlx_ner import Qwen3NerBackend, TYPE_NAMES
 from .ner import merge_entities
 from .redaction_core import Entity, detect_entities, extract_text, tokenize
 
 ROOT = Path(__file__).resolve().parents[1]
 HOST, PORT = "127.0.0.1", 8766
-MODEL = ROOT / "models/has/HaS_Text_0209_0.6B"
+MODEL = ROOT / "models/qwen3/Qwen3-1.7B-bf16"
 LOG_DIR = ROOT / "logs"
 LOG_FILE = LOG_DIR / "legalredaction.log"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -35,12 +35,12 @@ NER_CHUNK_CHARS = 2400
 NER_CHUNK_OVERLAP = 200
 
 
-def backend() -> MlxNerBackend:
+def backend() -> Qwen3NerBackend:
     global _backend
     with _lock:
         if _backend is None:
             logger.info("model_load_start path=%s", MODEL)
-            _backend = MlxNerBackend(MODEL)
+            _backend = Qwen3NerBackend(MODEL)
             logger.info("model_load_done")
         return _backend
 

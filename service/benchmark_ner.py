@@ -19,9 +19,9 @@ def request(url: str, model: str, text: str, types: list[str]) -> tuple[dict, fl
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Benchmark a local HaS/OpenAI-compatible NER endpoint")
+    parser = argparse.ArgumentParser(description="Benchmark a local Qwen3/OpenAI-compatible NER endpoint")
     parser.add_argument("--url", default="http://127.0.0.1:8080/v1/chat/completions")
-    parser.add_argument("--model", default="HaS_Text_0209_0.6B_Q4")
+    parser.add_argument("--model", default="Qwen3-1.7B-bf16")
     parser.add_argument("--text", default="原告张伟委托北京明德律师事务所，联系电话13800138000，案号（2025）粤0305民初123号。")
     parser.add_argument("--repeat", type=int, default=5)
     parser.add_argument("--output", type=Path, default=Path("test-results/has-benchmark.json"))
@@ -53,4 +53,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

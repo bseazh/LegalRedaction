@@ -39,7 +39,7 @@ LegalRedaction/
 - 上游 RedactionEverything：Personal Use License，不可默认用于律所生产或商业集成。
 - LocateAnything-3B：上游标注为 NVIDIA non-commercial，不纳入商业版候选方案。
 - PyMuPDF：AGPL-3.0；商业分发前需购买 Artifex 商业许可，或改用已确认许可的 PDF 方案。
-- HaS Text、PaddleOCR 等仍需逐项核对当前模型卡、依赖版本和再分发条款。
+- Qwen3-1.7B、PaddleOCR 等仍需逐项核对当前模型卡、依赖版本和再分发条款。
 
 ## 第一阶段不做
 
@@ -47,4 +47,3 @@ LegalRedaction/
 - LocateAnything-3B 等重型视觉模型；
 - 企业多用户、云端管理后台；
 - 要求律师手动下载模型或配置运行环境。
-

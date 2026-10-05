@@ -23,21 +23,31 @@ TYPE_NAMES = {
 }
 
 
-class MlxNerBackend:
-    name = "mlx-fp16"
+class Qwen3NerBackend:
+    name = "qwen3-1.7b-bf16"
 
     def __init__(self, model_path: str | Path):
         self.model, self.tokenizer = load(str(model_path))
 
     def recognize(self, text: str, entity_types: list[str]) -> list[Entity]:
         requested = [TYPE_NAMES.get(item, item) for item in entity_types]
-        body = f"Recognize the following entity types in the text.\nSpecified types:{json.dumps(requested, ensure_ascii=False)}\n<text>{text}</text>"
-        prompt = f"<|im_start|>user\n{body}<|im_end|>\n<|im_start|>assistant\n"
+        body = ("从文本中提取指定类型的实体。只返回 JSON 对象，不要解释、不要思考过程、不要 Markdown。"
+                f"JSON 的键只能是这些类型：{json.dumps(requested, ensure_ascii=False)}。"
+                "每个键的值必须是字符串数组；没有实体时返回空数组。\n"
+                f"文本：{text}")
+        try:
+            prompt = self.tokenizer.apply_chat_template([{"role": "user", "content": body}], tokenize=False, add_generation_prompt=True, enable_thinking=False)
+        except TypeError:
+            prompt = f"<|im_start|>user\n{body}<|im_end|>\n<|im_start|>assistant\n"
         chunks: list[str] = []
         for response in stream_generate(self.model, self.tokenizer, prompt, max_tokens=160, sampler=greedy_sampler):
             chunks.append(response.text)
         try:
-            data = json.loads("".join(chunks).strip())
+            raw = "".join(chunks).strip()
+            raw = raw.replace("<think>", "").replace("</think>", "")
+            if "```" in raw:
+                raw = raw.replace("```json", "").replace("```", "").strip()
+            data = json.loads(raw)
         except json.JSONDecodeError:
             return []
         inverse = {value: key for key, value in TYPE_NAMES.items()}
@@ -46,6 +56,8 @@ class MlxNerBackend:
             type_id = inverse.get(label, label)
             if type_id not in entity_types or not isinstance(values, list):
                 continue
+            if isinstance(values, str):
+                values = [values]
             for value in values:
                 if not isinstance(value, str):
                     continue
@@ -55,4 +67,3 @@ class MlxNerBackend:
                 start = starts[0]
                 entities.append(Entity(type_id, value, start, start + len(value), 0.9, "ner"))
         return entities
-
