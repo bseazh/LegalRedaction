@@ -31,6 +31,8 @@ if not logger.handlers:
 _backend = None
 _lock = threading.Lock()
 _inference_lock = threading.Lock()
+_jobs: dict[str, dict] = {}
+_jobs_lock = threading.Lock()
 NER_CHUNK_CHARS = 6000
 NER_CHUNK_OVERLAP = 300
 POLICY = {
@@ -51,7 +53,7 @@ def backend() -> Qwen3NerBackend:
         return _backend
 
 
-def analyze(path: Path) -> dict:
+def analyze(path: Path, job_id: str | None = None) -> dict:
     started = time.perf_counter()
     logger.info("analyze_start name=%s suffix=%s size=%d", path.name, path.suffix.lower(), path.stat().st_size)
     text = extract_text(path)
@@ -71,6 +73,9 @@ def analyze(path: Path) -> dict:
             chunk = text[offset : offset + NER_CHUNK_CHARS]
             if not chunk.strip():
                 continue
+            if job_id:
+                with _jobs_lock:
+                    _jobs[job_id].update({"phase": "ner", "chunk": len(ner) + 1, "chunks": chunks, "message": f"模型识别中：第 {min(offset // step + 1, chunks)} / {chunks} 段"})
             for entity in backend().recognize(chunk, list(TYPE_NAMES)):
                 start, end = offset + entity.start, offset + entity.end
                 key = (entity.type, start, end, entity.value)
@@ -87,6 +92,26 @@ def analyze(path: Path) -> dict:
     return {"path": str(path), "name": path.name, "text": text, "entities": payload_entities, "supported_types": list(TYPE_NAMES), "policy": POLICY}
 
 
+def run_job(job_id: str, name: str, raw: bytes, suffix: str) -> None:
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix="legalredaction-", suffix=suffix, delete=False) as temporary:
+            temporary.write(raw); temp_path = Path(temporary.name)
+        with _jobs_lock:
+            _jobs[job_id].update({"phase": "extract", "message": "正在提取文本"})
+        result = analyze(temp_path, job_id)
+        result["name"] = name; result["path"] = "local-upload"
+        with _jobs_lock:
+            _jobs[job_id].update({"status": "done", "phase": "done", "progress": 100, "message": f"识别完成：{len(result['entities'])} 个候选", "result": result})
+        logger.info("job_done id=%s name=%s entities=%d", job_id, name, len(result["entities"]))
+    except Exception as exc:
+        logger.error("job_error id=%s name=%s type=%s error=%s\n%s", job_id, name, type(exc).__name__, exc, traceback.format_exc())
+        with _jobs_lock:
+            _jobs[job_id].update({"status": "error", "phase": "error", "message": str(exc)})
+    finally:
+        if temp_path: temp_path.unlink(missing_ok=True)
+
+
 class Handler(BaseHTTPRequestHandler):
     def send_json(self, status: int, payload: object) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode()
@@ -98,6 +123,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/health": self.send_json(200, {"ok": True, "runtime": "MLX", "model": str(MODEL)}); return
+        if self.path.startswith("/jobs/"):
+            job_id = self.path.split("/", 2)[-1]
+            with _jobs_lock:
+                job = dict(_jobs.get(job_id, {"status": "missing", "message": "job not found"}))
+            self.send_json(200 if job.get("status") != "missing" else 404, job); return
         self.send_json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
@@ -113,15 +143,11 @@ class Handler(BaseHTTPRequestHandler):
                 suffix = Path(name).suffix.lower()
                 if suffix not in {".txt", ".md", ".eml", ".docx", ".pdf"}: raise ValueError("unsupported file type")
                 raw = base64.b64decode(str(payload["data"]), validate=True)
-                with tempfile.NamedTemporaryFile(prefix="legalredaction-", suffix=suffix, delete=False) as temporary:
-                    temporary.write(raw); temp_path = Path(temporary.name)
-                try:
-                    result = analyze(temp_path)
-                    result["name"] = name
-                    result["path"] = "local-upload"
-                finally:
-                    temp_path.unlink(missing_ok=True)
-                self.send_json(200, result)
+                job_id = request_id
+                with _jobs_lock:
+                    _jobs[job_id] = {"status": "queued", "phase": "queued", "progress": 0, "name": name, "message": "已排队"}
+                threading.Thread(target=run_job, args=(job_id, name, raw, suffix), daemon=True).start()
+                self.send_json(202, {"job_id": job_id, "status": "queued", "name": name, "message": "任务已创建"})
             else:
                 path = Path(str(payload["path"])).expanduser().resolve()
                 if not path.is_file(): raise ValueError("file not found")

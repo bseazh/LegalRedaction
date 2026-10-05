@@ -24,7 +24,24 @@ async function analyze(file) {
     let response; try { response=await fetch(api + '/analyze-upload', {method:'POST', headers:{'Content-Type':'application/json','X-Request-ID':requestId}, body:JSON.stringify({name:file.name, data:btoa(binary)}), signal:controller.signal}); } finally { clearTimeout(timeout); }
     const responseId = response.headers.get('X-Request-ID') || requestId;
     if (!response.ok) { const detail=await response.text(); console.error('[LegalRedaction]', 'analyze_error', {requestId:responseId,status:response.status,detail}); throw new Error(`请求失败（HTTP ${response.status}，ID ${responseId}）：${detail}`); }
-    result = await response.json(); $('fileName').textContent = result.name; renderText(); render(); $('status').textContent = ` 识别完成：${result.entities.length} 个候选，请确认底色标记后导出`; setProgress(`识别完成：${result.entities.length} 个候选，等待人工确认`,100);
+    const job=await response.json();
+    if (response.status===202 && job.job_id) {
+      let done=null;
+      for (;;) {
+        await new Promise(resolve=>setTimeout(resolve,1000));
+        const stateResponse=await fetch(api+'/jobs/'+encodeURIComponent(job.job_id),{cache:'no-store'});
+        const state=await stateResponse.json();
+        if(state.phase==='extract') { $('status').textContent=' 正在提取文本…'; setProgress(`${state.name}：正在提取文本`,25); }
+        else if(state.phase==='ner') { $('status').textContent=` 模型识别中：第 ${state.chunk||0} / ${state.chunks||'?'} 段…`; setProgress(state.message||'模型识别中…',Math.min(95,30+Math.round((state.chunk||0)*65/(state.chunks||1)))); }
+        else if(state.status==='queued') { $('status').textContent=' 已进入本地识别队列…'; setProgress(state.message||'已排队',10); }
+        if(state.status==='done') { done=state.result; break; }
+        if(state.status==='error') throw new Error(`后端处理失败（任务 ${job.job_id}）：${state.message}`);
+      }
+      result=done;
+    } else {
+      result = job;
+    }
+    $('fileName').textContent = result.name; renderText(); render(); $('status').textContent = ` 识别完成：${result.entities.length} 个候选，请确认底色标记后导出`; setProgress(`识别完成：${result.entities.length} 个候选，等待人工确认`,100);
     console.info('[LegalRedaction]', 'analyze_done', {requestId:responseId, chars:result.text.length, entities:result.entities.length});
   } catch(error) {
     const detail=error.name==='AbortError' ? `模型处理超过 10 分钟（请求 ID ${requestId}）。文件过长或分块过多，请查看后端日志。` : (error.message==='Load failed' ? `无法连接本地服务（请求 ID ${requestId}）。请确认 Tauri 已完整重启，并检查 8766 端口。` : error.message);
