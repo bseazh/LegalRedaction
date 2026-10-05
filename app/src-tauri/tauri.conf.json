@@ -5,5 +5,5 @@
   "identifier": "local.legalredaction.desktop",
   "build": {"beforeDevCommand": "npm run dev", "devUrl": "http://localhost:5173", "frontendDist": "../dist"},
   "app": {"windows": [{"title": "LegalRedaction", "width": 1280, "height": 820}], "security": {"csp": null}},
-  "bundle": {"active": true, "targets": ["dmg"], "icon": ["icons/icon.png"], "category": "Utility", "shortDescription": "Local legal document redaction"}
+  "bundle": {"active": true, "targets": ["dmg"], "icon": ["icons/icon.png"], "category": "Utility", "shortDescription": "Local legal document redaction", "resources": {"../../dist-sidecar/legalredaction-service": "sidecar/legalredaction-service", "../../models/qwen3/Qwen3-1.7B-bf16": "models/qwen3/Qwen3-1.7B-bf16"}}
 }

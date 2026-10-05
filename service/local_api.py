@@ -8,6 +8,7 @@ import tempfile
 import threading
 import traceback
 import uuid
+import os
 from logging.handlers import RotatingFileHandler
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -16,10 +17,10 @@ from .mlx_ner import Qwen3NerBackend, TYPE_NAMES
 from .ner import merge_entities
 from .redaction_core import Entity, detect_entities, extract_text, tokenize
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("LEGALREDACTION_ROOT", Path(__file__).resolve().parents[1])).resolve()
 HOST, PORT = "127.0.0.1", 8766
-MODEL = ROOT / "models/qwen3/Qwen3-1.7B-bf16"
-LOG_DIR = ROOT / "logs"
+MODEL = Path(os.environ.get("LEGALREDACTION_MODEL_DIR", ROOT / "models/qwen3/Qwen3-1.7B-bf16")).resolve()
+LOG_DIR = Path(os.environ.get("LEGALREDACTION_LOG_DIR", ROOT / "logs")).resolve()
 LOG_FILE = LOG_DIR / "legalredaction.log"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 logger = logging.getLogger("legalredaction.api")
@@ -69,13 +70,13 @@ def analyze(path: Path, job_id: str | None = None) -> dict:
         chunks = max(1, (max(0, len(text) - NER_CHUNK_OVERLAP) + step - 1) // step)
         logger.info("ner_chunks_start name=%s chunks=%d chunk_chars=%d", path.name, chunks, NER_CHUNK_CHARS)
         seen = set()
-        for offset in range(0, len(text), step):
+        for chunk_index, offset in enumerate(range(0, len(text), step), start=1):
             chunk = text[offset : offset + NER_CHUNK_CHARS]
             if not chunk.strip():
                 continue
             if job_id:
                 with _jobs_lock:
-                    _jobs[job_id].update({"phase": "ner", "chunk": len(ner) + 1, "chunks": chunks, "message": f"模型识别中：第 {min(offset // step + 1, chunks)} / {chunks} 段"})
+                    _jobs[job_id].update({"status": "running", "phase": "ner", "chunk": chunk_index, "chunks": chunks, "progress": min(95, 30 + round(chunk_index * 65 / chunks)), "message": f"模型识别中：第 {chunk_index} / {chunks} 段"})
             for entity in backend().recognize(chunk, list(TYPE_NAMES)):
                 start, end = offset + entity.start, offset + entity.end
                 key = (entity.type, start, end, entity.value)

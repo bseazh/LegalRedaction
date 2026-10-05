@@ -8,6 +8,9 @@ logs/
 app/node_modules/
 app/dist/
 app/src-tauri/target/
+dist-sidecar/
+build/pyinstaller/
+build/*.spec
 __pycache__/
 *.pyc
 .DS_Store
