@@ -67,3 +67,22 @@ class Qwen3NerBackend:
                 start = starts[0]
                 entities.append(Entity(type_id, value, start, start + len(value), 0.9, "ner"))
         return entities
+
+
+def recognize_chunked(backend: Qwen3NerBackend, text: str, entity_types: list[str], chunk_chars: int = 2400, overlap: int = 200) -> list[Entity]:
+    """Run NER over bounded windows and restore document-global offsets."""
+    step = max(1, chunk_chars - overlap)
+    result: list[Entity] = []
+    seen: set[tuple[str, str, int, int]] = set()
+    for offset in range(0, len(text), step):
+        chunk = text[offset:offset + chunk_chars]
+        if chunk.strip():
+            for entity in backend.recognize(chunk, entity_types):
+                item = Entity(entity.type, entity.value, offset + entity.start, offset + entity.end, entity.confidence, entity.source)
+                key = (item.type, item.value, item.start, item.end)
+                if key not in seen:
+                    seen.add(key)
+                    result.append(item)
+        if offset + chunk_chars >= len(text):
+            break
+    return sorted(result, key=lambda item: (item.start, item.end))

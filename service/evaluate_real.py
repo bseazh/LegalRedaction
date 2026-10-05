@@ -55,7 +55,7 @@ def main() -> int:
         out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 2
-    from .mlx_ner import Qwen3NerBackend
+    from .mlx_ner import Qwen3NerBackend, recognize_chunked
     backend = Qwen3NerBackend(root / "models/qwen3/Qwen3-1.7B-bf16")
     totals = defaultdict(lambda: Counter())
     by_type = defaultdict(lambda: defaultdict(Counter))
@@ -63,7 +63,7 @@ def main() -> int:
         text = record["text"]
         gold = record["gold_entities"]
         requested = list(TYPE_NAMES)
-        ner = backend.recognize(text, requested)
+        ner = recognize_chunked(backend, text, requested)
         variants = {"rules": detect_entities(text), "fp16_ner": ner, "hybrid": merge_entities(detect_entities(text), ner)}
         for variant, pred in variants.items():
             result = score(gold, pred)
