@@ -5,13 +5,31 @@ use tauri::Manager;
 
 struct ApiChild(Mutex<Option<Child>>);
 
+fn copy_dir(source: &std::path::Path, destination: &std::path::Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(destination)?;
+    for entry in std::fs::read_dir(source)? {
+        let entry = entry?;
+        let target = destination.join(entry.file_name());
+        if entry.file_type()?.is_dir() { copy_dir(&entry.path(), &target)?; }
+        else { std::fs::copy(entry.path(), target)?; }
+    }
+    Ok(())
+}
+
 fn start_api(app: &tauri::AppHandle) -> Option<Child> {
     let project = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent()?.parent()?.to_path_buf();
     let (executable, args, work_dir, model_dir) = if cfg!(debug_assertions) {
         (project.join(".venv-mlx/bin/python3"), vec!["-m", "service.local_api"], project.clone(), project.join("models/qwen3/Qwen3-1.7B-bf16"))
     } else {
         let resources = app.path().resource_dir().ok()?;
-        (resources.join("sidecar/legalredaction-service/legalredaction-service"), vec![], resources.clone(), resources.join("models/qwen3/Qwen3-1.7B-bf16"))
+        let source = resources.join("sidecar/legalredaction-service");
+        let installed = app.path().app_local_data_dir().ok()?.join("sidecar/legalredaction-service");
+        let executable = installed.join("legalredaction-service");
+        if !executable.is_file() {
+            let _ = std::fs::remove_dir_all(&installed);
+            copy_dir(&source, &installed).ok()?;
+        }
+        (executable, vec![], installed, resources.join("models/qwen3/Qwen3-1.7B-bf16"))
     };
     let log_dir = app.path().app_log_dir().ok()?;
     let _ = std::fs::create_dir_all(&log_dir);
