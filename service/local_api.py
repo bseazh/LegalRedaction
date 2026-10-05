@@ -59,11 +59,11 @@ def analyze(path: Path) -> dict:
 class Handler(BaseHTTPRequestHandler):
     def send_json(self, status: int, payload: object) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode()
-        self.send_response(status); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Request-ID"); self.send_header("X-Request-ID", getattr(self, "_request_id", "")); self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
+        self.send_response(status); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Request-ID"); self.send_header("Access-Control-Allow-Private-Network", "true"); self.send_header("X-Request-ID", getattr(self, "_request_id", "")); self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
 
     def do_OPTIONS(self) -> None:
-        logger.info("cors_preflight path=%s origin=%s", self.path, self.headers.get("Origin", ""))
-        self.send_response(204); self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); self.send_header("Access-Control-Allow-Headers", "Content-Type"); self.send_header("Access-Control-Max-Age", "600"); self.end_headers()
+        logger.info("cors_preflight path=%s origin=%s requested_headers=%s private_network=%s", self.path, self.headers.get("Origin", ""), self.headers.get("Access-Control-Request-Headers", ""), self.headers.get("Access-Control-Request-Private-Network", ""))
+        self.send_response(204); self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Request-ID"); self.send_header("Access-Control-Allow-Private-Network", "true"); self.send_header("Access-Control-Max-Age", "600"); self.end_headers()
 
     def do_GET(self) -> None:
         if self.path == "/health": self.send_json(200, {"ok": True, "runtime": "MLX", "model": str(MODEL)}); return
