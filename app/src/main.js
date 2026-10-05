@@ -21,7 +21,7 @@ async function analyze(file) {
     result = await response.json(); $('fileName').textContent = result.name; $('content').textContent = result.text; render(); $('status').textContent = ` 识别完成：${result.entities.length} 个候选`;
     console.info('[LegalRedaction]', 'analyze_done', {requestId:responseId, chars:result.text.length, entities:result.entities.length});
   } catch(error) {
-    const detail=error.name==='AbortError' ? `处理超过 120 秒（请求 ID ${requestId}）` : error.message;
+    const detail=error.name==='AbortError' ? `处理超过 120 秒（请求 ID ${requestId}）` : (error.message==='Load failed' ? `无法连接本地服务（请求 ID ${requestId}）。请确认 Tauri 已完整重启，并检查 8766 端口。` : error.message);
     console.error('[LegalRedaction]', 'ui_error', {requestId,error}); $('status').textContent=' 识别失败：'+detail; throw error;
   } finally { clearTimeout(phaseTimer); input.disabled=false; }
 }
