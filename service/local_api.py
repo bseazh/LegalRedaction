@@ -30,6 +30,7 @@ if not logger.handlers:
     logger.addHandler(handler)
 _backend = None
 _lock = threading.Lock()
+_inference_lock = threading.Lock()
 
 
 def backend() -> MlxNerBackend:
@@ -49,7 +50,11 @@ def analyze(path: Path) -> dict:
     logger.info("extract_done name=%s chars=%d", path.name, len(text))
     rules = detect_entities(text)
     logger.info("rules_done name=%s entities=%d", path.name, len(rules))
-    ner = backend().recognize(text, list(TYPE_NAMES))
+    queue_started = time.perf_counter()
+    logger.info("ner_queue_wait name=%s", path.name)
+    with _inference_lock:
+        logger.info("ner_queue_acquired name=%s wait_ms=%d", path.name, round((time.perf_counter() - queue_started) * 1000))
+        ner = backend().recognize(text, list(TYPE_NAMES))
     logger.info("ner_done name=%s entities=%d elapsed_ms=%d", path.name, len(ner), round((time.perf_counter() - started) * 1000))
     entities = merge_entities(rules, ner)
     logger.info("analyze_done name=%s entities=%d elapsed_ms=%d", path.name, len(entities), round((time.perf_counter() - started) * 1000))
