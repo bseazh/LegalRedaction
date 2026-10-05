@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .mlx_ner import MlxNerBackend, TYPE_NAMES
 from .ner import merge_entities
-from .redaction_core import detect_entities, extract_text, tokenize
+from .redaction_core import Entity, detect_entities, extract_text, tokenize
 
 ROOT = Path(__file__).resolve().parents[1]
 HOST, PORT = "127.0.0.1", 8766
@@ -31,6 +31,8 @@ if not logger.handlers:
 _backend = None
 _lock = threading.Lock()
 _inference_lock = threading.Lock()
+NER_CHUNK_CHARS = 2400
+NER_CHUNK_OVERLAP = 200
 
 
 def backend() -> MlxNerBackend:
@@ -54,7 +56,24 @@ def analyze(path: Path) -> dict:
     logger.info("ner_queue_wait name=%s", path.name)
     with _inference_lock:
         logger.info("ner_queue_acquired name=%s wait_ms=%d", path.name, round((time.perf_counter() - queue_started) * 1000))
-        ner = backend().recognize(text, list(TYPE_NAMES))
+        ner = []
+        step = NER_CHUNK_CHARS - NER_CHUNK_OVERLAP
+        chunks = max(1, (max(0, len(text) - NER_CHUNK_OVERLAP) + step - 1) // step)
+        logger.info("ner_chunks_start name=%s chunks=%d chunk_chars=%d", path.name, chunks, NER_CHUNK_CHARS)
+        seen = set()
+        for offset in range(0, len(text), step):
+            chunk = text[offset : offset + NER_CHUNK_CHARS]
+            if not chunk.strip():
+                continue
+            for entity in backend().recognize(chunk, list(TYPE_NAMES)):
+                start, end = offset + entity.start, offset + entity.end
+                key = (entity.type, start, end, entity.value)
+                if key not in seen:
+                    seen.add(key)
+                    ner.append(Entity(entity.type, entity.value, start, end, entity.confidence, entity.source))
+            if offset + NER_CHUNK_CHARS >= len(text):
+                break
+        logger.info("ner_chunks_done name=%s chunks=%d unique_entities=%d", path.name, chunks, len(ner))
     logger.info("ner_done name=%s entities=%d elapsed_ms=%d", path.name, len(ner), round((time.perf_counter() - started) * 1000))
     entities = merge_entities(rules, ner)
     logger.info("analyze_done name=%s entities=%d elapsed_ms=%d", path.name, len(entities), round((time.perf_counter() - started) * 1000))
