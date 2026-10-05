@@ -121,7 +121,7 @@ class Handler(BaseHTTPRequestHandler):
                     result["path"] = "local-upload"
                 finally:
                     temp_path.unlink(missing_ok=True)
-        self.send_json(200, result)
+                self.send_json(200, result)
             else:
                 path = Path(str(payload["path"])).expanduser().resolve()
                 if not path.is_file(): raise ValueError("file not found")
