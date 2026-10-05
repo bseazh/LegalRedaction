@@ -1,10 +1,12 @@
 let result = null;
+let serviceReady = false;
 const api = 'http://127.0.0.1:8766';
 const $ = id => document.getElementById(id);
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const exportButton = document.querySelector('button[onclick="exportRedacted()"]');
 if (exportButton && !document.querySelector('#mappingButton')) { const b=document.createElement('button'); b.id='mappingButton'; b.textContent='导出加密映射'; b.onclick=exportMapping; exportButton.parentNode.appendChild(b); }
 async function analyze(file) {
+  if (!serviceReady) { $('status').textContent=' 本地服务尚未连接，请稍候…'; return; }
   const input=$('file'); input.disabled=true; $('status').textContent = ' 正在上传文件…';
   const requestId = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36));
   console.info('[LegalRedaction]', 'analyze_start', {requestId, name:file.name, size:file.size, type:file.type});
@@ -23,7 +25,7 @@ async function analyze(file) {
   } catch(error) {
     const detail=error.name==='AbortError' ? `处理超过 120 秒（请求 ID ${requestId}）` : (error.message==='Load failed' ? `无法连接本地服务（请求 ID ${requestId}）。请确认 Tauri 已完整重启，并检查 8766 端口。` : error.message);
     console.error('[LegalRedaction]', 'ui_error', {requestId,error}); $('status').textContent=' 识别失败：'+detail; throw error;
-  } finally { clearTimeout(phaseTimer); input.disabled=false; }
+  } finally { clearTimeout(phaseTimer); input.disabled=!serviceReady; }
 }
 function overlaps(e, i) { return result.entities.some((x,j) => j !== i && x.review === 'confirmed' && e.start < x.end && e.end > x.start); }
 function render() {
@@ -36,5 +38,13 @@ function exportRedacted() { if (!result) return; const confirmed = result.entiti
 async function getKey() { const stored=localStorage.getItem('legalredaction-key'); if(stored) return crypto.subtle.importKey('raw',Uint8Array.from(atob(stored),c=>c.charCodeAt(0)),{name:'AES-GCM'},false,['encrypt','decrypt']); const key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']); const raw=new Uint8Array(await crypto.subtle.exportKey('raw',key)); localStorage.setItem('legalredaction-key',btoa(String.fromCharCode(...raw))); return key; }
 async function exportMapping() { if(!window.lastMapping) { $('status').textContent=' 请先导出脱敏文本'; return; } const iv=crypto.getRandomValues(new Uint8Array(12)); const encrypted=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await getKey(),new TextEncoder().encode(JSON.stringify(window.lastMapping)))); download((result.name||'redacted')+'.mapping.enc.json',JSON.stringify({version:1,algorithm:'AES-256-GCM',iv:Array.from(iv),ciphertext:Array.from(encrypted)},null,2),'application/json'); $('status').textContent=' 已导出加密映射表'; }
 $('file').addEventListener('change', async event => { const file=event.target.files[0]; if (!file) return; $('fileName').textContent='选择中…'; try { await analyze(file); } catch (_) {} });
-fetch(api+'/health').then(()=>{$('status').textContent=' 本地服务已连接'}).catch(()=>{});
+async function checkHealth() {
+  try {
+    const response=await fetch(api+'/health',{cache:'no-store'}); if (!response.ok) throw Error(`HTTP ${response.status}`);
+    serviceReady=true; $('file').disabled=false; if (!result) $('status').textContent=' 本地服务已连接'; return true;
+  } catch (_) {
+    serviceReady=false; $('file').disabled=true; if (!result) $('status').textContent=' 正在连接本地服务…'; return false;
+  }
+}
+checkHealth(); setInterval(checkHealth,2000);
 Object.assign(window,{exportRedacted,exportMapping,review,editEntity});
