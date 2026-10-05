@@ -1,4 +1,5 @@
 models/**/*.safetensors
+models/qwen3/
 models/**/*.bin
 models/**/*.gguf
 test-results/
