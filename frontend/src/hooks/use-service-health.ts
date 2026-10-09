@@ -12,6 +12,8 @@ export interface ServiceInfo {
 export type ServiceRuntimeMode = 'gpu' | 'cpu' | 'unknown';
 
 export interface ServiceDetail {
+  reachable?: boolean;
+  ready?: boolean;
   runtime?: string | null;
   runtime_mode?: ServiceRuntimeMode;
   gpu_available?: boolean | null;
@@ -112,6 +114,8 @@ function normalizeServiceDetail(value: unknown): ServiceDetail | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const raw = value as Record<string, unknown>;
   const detail: ServiceDetail = {};
+  if (typeof raw.reachable === 'boolean') detail.reachable = raw.reachable;
+  if (typeof raw.ready === 'boolean') detail.ready = raw.ready;
   if (typeof raw.runtime === 'string') detail.runtime = raw.runtime;
   if (raw.runtime_mode === 'gpu' || raw.runtime_mode === 'cpu' || raw.runtime_mode === 'unknown') {
     detail.runtime_mode = raw.runtime_mode;

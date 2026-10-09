@@ -1,6 +1,7 @@
 // Copyright 2026 DataInfra-RedactionEverything Contributors
 
-import { type FC, type ReactNode, useMemo } from 'react';
+import { type FC, type ReactNode, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useT } from '@/i18n';
 import { getEntityTypeName } from '@/config/entityTypes';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -14,7 +15,6 @@ import { PlaygroundLoading } from './components/playground-loading';
 import { PlaygroundTextSelectionPopover } from './components/playground-text-selection-popover';
 import { PlaygroundEntityPopover } from './components/playground-entity-popover';
 import {
-  PlaygroundProvider,
   usePlaygroundContext,
   usePlaygroundUIContext,
 } from './playground-context';
@@ -24,6 +24,9 @@ import { buildEntityCoverageMap, buildTextSegments } from '@/utils/textRedaction
 /** Inner component that consumes the playground context. */
 const PlaygroundInner: FC = () => {
   const t = useT();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { fileId: routeFileId } = useParams<{ fileId?: string }>();
   const ctx = usePlaygroundContext();
   const ui = usePlaygroundUIContext();
 
@@ -77,6 +80,21 @@ const PlaygroundInner: FC = () => {
   } = ctx;
 
   const { entityTypes } = recognition;
+
+  useEffect(() => {
+    if (fileInfo?.file_id) {
+      sessionStorage.setItem('playground:last-file-id', fileInfo.file_id);
+      if (routeFileId !== fileInfo.file_id) {
+        navigate(`/single/${encodeURIComponent(fileInfo.file_id)}`, { replace: true });
+      }
+      return;
+    }
+    if (routeFileId || !['/single', '/playground'].includes(location.pathname)) return;
+    const lastFileId = sessionStorage.getItem('playground:last-file-id');
+    if (lastFileId) {
+      navigate(`/single/${encodeURIComponent(lastFileId)}`, { replace: true });
+    }
+  }, [fileInfo?.file_id, location.pathname, navigate, routeFileId]);
   const visionTypes = useMemo(
     () =>
       (recognition.pipelines ?? []).flatMap((pipeline) =>
@@ -407,12 +425,6 @@ const PlaygroundInner: FC = () => {
   );
 };
 
-/**
- * Playground page — wrapped in PlaygroundProvider so child components
- * can access the playground context directly without prop drilling.
- */
-export const Playground: FC = () => (
-  <PlaygroundProvider>
-    <PlaygroundInner />
-  </PlaygroundProvider>
-);
+/** The provider lives above the router outlet so sidebar navigation does not
+ * destroy the active single-file workspace. */
+export const Playground: FC = () => <PlaygroundInner />;

@@ -90,6 +90,7 @@ const zhBase: Record<string, string> = {
   'mode.smart': '智能替换',
   'mode.mask': '掩码替换',
   'mode.structured': '结构化标签',
+  'mode.pseudonym': '自然假名',
 
   'job.status.draft': '草稿',
   'job.status.queued': '排队中',
@@ -446,6 +447,8 @@ const zhBase: Record<string, string> = {
   'batchWizard.step1.textMethodStructured': '清晰标签',
   'batchWizard.step1.textMethodSmart': '自然替换',
   'batchWizard.step1.textMethodMask': '直接掩码',
+  'batchWizard.step1.textMethodPseudonym': '自然假名',
+  'batchWizard.step1.textModeBulletPseudonym': '用稳定的虚构姓名、机构和地址替换原内容',
   'batchWizard.step1.textModeBulletStructured':
     '清晰标签 - 用 [姓名]、[身份证号] 等标签替换敏感文字',
   'batchWizard.step1.textModeBulletSmart':

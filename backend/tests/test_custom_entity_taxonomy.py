@@ -225,6 +225,36 @@ class CustomEntityTaxonomyTests(unittest.TestCase):
 
         self.assertEqual([(item.start, item.end) for item in relocated], [(6, 8), (16, 18)])
 
+    def test_none_confidence_is_safe_when_propagating_semantic_mentions(self):
+        text = "张三联系了张三"
+        service = HybridNERService()
+        entities = [
+            Entity(
+                id="person",
+                text="张三",
+                type="PERSON",
+                start=0,
+                end=2,
+                confidence=None,
+                source="has",
+            ),
+        ]
+
+        result = service._cross_validate(entities, text, {"PERSON"})
+
+        self.assertEqual([(item.start, item.end) for item in result], [(0, 2), (5, 7)])
+        self.assertEqual(result[1].confidence, 0.9)
+
+    def test_candidate_chunk_builder_keeps_content_beyond_old_twelve_chunk_limit(self):
+        service = HybridNERService()
+        long_unpunctuated_text = "".join(f"字段{i:04d}" for i in range(5000)) + "文档尾部标记"
+
+        chunks = service._build_has_candidate_chunks(long_unpunctuated_text)
+
+        self.assertGreater(len(chunks), 12)
+        self.assertIn("文档尾部标记", chunks[-1].text)
+        self.assertGreater(chunks[-1].line_offsets[-1], len(long_unpunctuated_text) - 500)
+
     def test_query_names_are_passthrough_no_hidden_aliases(self):
         # 勾选什么查什么: the checklist owns the query vocabulary — the old
         # prompt-only alias expansion (地理位置/道路地址 silently appended to a

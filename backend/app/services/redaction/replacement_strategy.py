@@ -33,6 +33,29 @@ MASK_KEEP_PREFIX_ID_CARD = 6  # 身份证保留前6位
 MASK_KEEP_SUFFIX_ID_CARD = 4  # 身份证保留后4位
 MASK_KEEP_SUFFIX_BANK_CARD = 4  # 银行卡保留后4位
 
+PSEUDONYM_PERSON_TYPES = {"PERSON", "LEGAL_PARTY", "LAWYER", "JUDGE", "WITNESS"}
+PSEUDONYM_ORG_TYPES = {"ORG", "WORK_UNIT", "BANK_NAME"}
+PSEUDONYM_NAMES = (
+    "林安然", "周知远", "陈清禾", "赵景明", "沈若宁",
+    "顾南川", "许星遥", "陆闻舟", "苏念安", "程以宁",
+)
+PSEUDONYM_ORGANIZATIONS = (
+    "星河科技有限公司", "云岚商贸有限公司", "青禾咨询有限公司",
+    "远川实业有限公司", "明海文化有限公司",
+)
+PSEUDONYM_ADDRESSES = (
+    "云海市青岚区星河路88号", "临川市朝阳区云杉路16号",
+    "安宁市新城区清风街36号", "江州市滨河区望月路9号",
+)
+
+
+def _alpha_index(index: int) -> str:
+    result = ""
+    while index > 0:
+        index, remainder = divmod(index - 1, 26)
+        result = chr(65 + remainder) + result
+    return result or "A"
+
 
 def _raw_entity_type_id(entity_type: object) -> str:
     return entity_type.value if isinstance(entity_type, EntityType) else str(entity_type)
@@ -89,6 +112,8 @@ class RedactionContext:
         elif self.mode == ReplacementMode.STRUCTURED:
             # 结构化语义标签
             replacement = self._generate_structured_replacement(entity)
+        elif self.mode == ReplacementMode.PSEUDONYM:
+            replacement = self._generate_pseudonym_replacement(entity)
         else:
             # 智能模式
             replacement = self._generate_smart_replacement(entity)
@@ -120,6 +145,37 @@ class RedactionContext:
             num_str = str(count)
 
         return f"[{label}{num_str}]"
+
+    def _generate_pseudonym_replacement(self, entity: Entity) -> str:
+        """生成稳定、明确为虚构内容的自然假名。"""
+        type_key = _type_key_for_entity(entity)
+        counter_key = "PERSON" if type_key in PSEUDONYM_PERSON_TYPES else (
+            "ORG" if type_key in PSEUDONYM_ORG_TYPES else type_key
+        )
+        self.type_counters[counter_key] = self.type_counters.get(counter_key, 0) + 1
+        index = self.type_counters[counter_key]
+        suffix = _alpha_index(index)
+
+        if counter_key == "PERSON":
+            base = PSEUDONYM_NAMES[(index - 1) % len(PSEUDONYM_NAMES)]
+            cycle = (index - 1) // len(PSEUDONYM_NAMES)
+            return base if cycle == 0 else f"{base}{cycle + 1}"
+        if counter_key == "ORG":
+            base = PSEUDONYM_ORGANIZATIONS[(index - 1) % len(PSEUDONYM_ORGANIZATIONS)]
+            cycle = (index - 1) // len(PSEUDONYM_ORGANIZATIONS)
+            return base if cycle == 0 else f"{base[:-4]}{cycle + 1}号有限公司"
+        if type_key == "ADDRESS":
+            return PSEUDONYM_ADDRESSES[(index - 1) % len(PSEUDONYM_ADDRESSES)]
+
+        labels = {
+            "PHONE": "虚拟电话", "EMAIL": "虚拟邮箱", "ID_CARD": "虚拟证件",
+            "PASSPORT": "虚拟护照", "BANK_CARD": "虚拟卡号", "BANK_ACCOUNT": "虚拟账户",
+            "COMPANY_CODE": "虚拟信用代码", "CASE_NUMBER": "虚拟编号",
+            "DOCUMENT_NUMBER": "虚拟文书号", "CONTRACT_NO": "虚拟合同号",
+            "DATE": "虚拟日期", "BIRTH_DATE": "虚拟出生日期", "AMOUNT": "虚拟金额",
+        }
+        label = labels.get(type_key) or self._get_type_label(type_key) or "敏感项"
+        return f"{label}{suffix}"
 
     def _generate_mask_replacement(self, entity: Entity) -> str:
         """生成掩码替换文本"""

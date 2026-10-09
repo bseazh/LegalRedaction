@@ -255,7 +255,23 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'single/:fileId',
+        element: (
+          <LazyPage>
+            <Playground />
+          </LazyPage>
+        ),
+      },
+      {
         path: 'playground',
+        element: (
+          <LazyPage>
+            <Playground />
+          </LazyPage>
+        ),
+      },
+      {
+        path: 'playground/:fileId',
         element: (
           <LazyPage>
             <Playground />

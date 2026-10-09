@@ -95,8 +95,8 @@ class HybridNERService:
         return canonical in HybridNERService.ORG_LIKE_TYPE_IDS or "organization_like" in linkage_groups_for_type(canonical)
     ENTITY_EDGE_PUNCTUATION = " \t\r\n，。；：、,.!?！？;:()（）[]【】"
     MAX_HAS_TEXT_CHARS = 1_600
-    MAX_HAS_CHUNKS = 12
     MAX_HAS_LINE_CHARS = 320
+    HAS_LINE_OVERLAP_CHARS = 32
     SEMANTIC_LINE_HINTS = (
         "姓名", "联系人", "联络人", "经办人", "负责人", "法定代表人", "代表人",
         "采购单位", "供应商",
@@ -360,24 +360,27 @@ class HybridNERService:
         addresses and work units.
         """
         candidate_lines: list[tuple[str, int]] = []
-        seen: set[str] = set()
         search_from = 0
 
         def add_line(line: str) -> None:
             nonlocal search_from
             line = re.sub(r"\s+", " ", line).strip()
-            if not line or line in seen:
+            if not line:
                 return
-            if len(line) > self.MAX_HAS_LINE_CHARS:
-                line = line[: self.MAX_HAS_LINE_CHARS].rstrip()
-            if line:
-                offset = text.find(line, search_from)
+
+            step = max(1, self.MAX_HAS_LINE_CHARS - self.HAS_LINE_OVERLAP_CHARS)
+            for start in range(0, len(line), step):
+                segment = line[start:start + self.MAX_HAS_LINE_CHARS].rstrip()
+                if not segment:
+                    continue
+                offset = text.find(segment, max(0, search_from - self.HAS_LINE_OVERLAP_CHARS))
                 if offset < 0:
-                    offset = text.find(line)
+                    offset = text.find(segment)
                 if offset >= 0:
-                    search_from = offset + len(line)
-                seen.add(line)
-                candidate_lines.append((line, offset))
+                    search_from = offset + len(segment)
+                candidate_lines.append((segment, offset))
+                if start + self.MAX_HAS_LINE_CHARS >= len(line):
+                    break
 
         for raw_line in self._iter_semantic_lines(text):
             line = raw_line.strip()
@@ -396,12 +399,10 @@ class HybridNERService:
                 current = []
                 current_offsets = []
                 current_len = 0
-                if len(chunks) >= self.MAX_HAS_CHUNKS:
-                    break
             current.append(line)
             current_offsets.append(offset)
             current_len += line_len
-        if current and len(chunks) < self.MAX_HAS_CHUNKS:
+        if current:
             chunks.append(_HaSChunk(text="\n".join(current), line_offsets=tuple(current_offsets)))
 
         logger.info(
@@ -410,11 +411,6 @@ class HybridNERService:
             len(chunks),
             sum(len(chunk.text) for chunk in chunks),
         )
-        if chunks and len(chunks) >= self.MAX_HAS_CHUNKS and current_len == 0:
-            logger.warning(
-                "  HaS semantic candidate chunks reached limit %d; later candidate lines may be skipped",
-                self.MAX_HAS_CHUNKS,
-            )
         return chunks
 
     def _relocate_has_entities(
@@ -733,6 +729,12 @@ class HybridNERService:
                     break
                 end = pos + len(value)
                 if not any(not (end <= s or pos >= e) for s, e in existing_ranges):
+                    source_confidence = getattr(source_entity, "confidence", None)
+                    propagated_confidence = (
+                        min(float(source_confidence), 0.9)
+                        if source_confidence is not None
+                        else 0.9
+                    )
                     propagated.append(Entity(
                         id=f"has_propagated_{len(propagated)}",
                         text=value,
@@ -740,7 +742,7 @@ class HybridNERService:
                         start=pos,
                         end=end,
                         page=getattr(source_entity, "page", 1),
-                        confidence=min(float(getattr(source_entity, "confidence", 0.9)), 0.9),
+                        confidence=propagated_confidence,
                         source="has",
                         coref_id=source_entity.coref_id or f"semantic:{source_entity.type}:{value}",
                     ))

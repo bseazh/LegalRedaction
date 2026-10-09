@@ -7,7 +7,12 @@ import { showToast } from '@/components/Toast';
 import { t } from '@/i18n';
 import { localizeErrorMessage } from '@/utils/localizeError';
 import { ACCEPTED_UPLOAD_FILE_TYPES } from '@/utils/fileUploadAccept';
-import { safeJson, runVisionDetectionPages } from '../utils';
+import {
+  assertNerSucceeded,
+  buildHybridNerRequest,
+  safeJson,
+  runVisionDetectionPages,
+} from '../utils';
 import type {
   FileInfo,
   Entity,
@@ -276,7 +281,7 @@ export function usePlaygroundFile(options: UsePlaygroundFileOptions) {
           const nerRes = await authFetch(`/api/v1/files/${fileId}/ner/hybrid`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entity_type_ids: opts.latestSelectedTypesRef.current }),
+            body: JSON.stringify(buildHybridNerRequest(opts.latestSelectedTypesRef.current)),
             signal,
           });
           if (signal.aborted) return;
@@ -286,6 +291,7 @@ export function usePlaygroundFile(options: UsePlaygroundFileOptions) {
           }
 
           const nerData = await safeJson<NerResponse>(nerRes);
+          assertNerSucceeded(nerData);
           const entitiesWithSource = (nerData.entities || []).map(
             (e: Record<string, unknown>, idx: number) =>
               ({

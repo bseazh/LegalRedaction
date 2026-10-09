@@ -114,6 +114,7 @@ class ReplacementMode(str, Enum):
     MASK = "mask"        # 掩码替换 (***)
     CUSTOM = "custom"    # 自定义替换
     STRUCTURED = "structured"  # 结构化语义标签
+    PSEUDONYM = "pseudonym"  # 自然假名（林安然、星河科技有限公司）
 
 
 # ============ 通用响应 ============

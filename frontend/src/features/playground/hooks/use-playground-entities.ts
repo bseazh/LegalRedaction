@@ -6,7 +6,7 @@ import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { authFetch } from '@/services/api-client';
 import { showToast } from '@/components/Toast';
 import { localizeErrorMessage } from '@/utils/localizeError';
-import { safeJson } from '../utils';
+import { assertNerSucceeded, buildHybridNerRequest, safeJson } from '../utils';
 import type { Entity, NerResponse } from '../types';
 
 export function usePlaygroundEntities() {
@@ -71,12 +71,13 @@ export function usePlaygroundEntities() {
         const nerRes = await authFetch(`/api/v1/files/${fileId}/ner/hybrid`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entity_type_ids: selectedTypes }),
+          body: JSON.stringify(buildHybridNerRequest(selectedTypes)),
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
         if (!nerRes.ok) throw new Error(t('error.reRecognizeFailed'));
         const nerData = await safeJson<NerResponse>(nerRes);
+        assertNerSucceeded(nerData);
         if (controller.signal.aborted) return;
         const entitiesWithSource = (nerData.entities || []).map(
           (e: Record<string, unknown>, idx: number) =>

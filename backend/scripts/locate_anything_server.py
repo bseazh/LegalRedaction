@@ -127,6 +127,9 @@ def trim_cuda_cache(label: str) -> None:
             except Exception:
                 pass
             print(f"[LocateAnything] cuda cache trimmed after {label}", flush=True)
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+            print(f"[LocateAnything] MPS cache trimmed after {label}", flush=True)
     except Exception:
         pass
 
@@ -139,6 +142,8 @@ def _is_cuda_capacity_error(exc: BaseException) -> bool:
         or "cuda error" in text
         or "cuda out" in text
         or "make_resident" in text
+        or "mps backend out of memory" in text
+        or "metal command buffer" in text
     )
 
 
@@ -875,11 +880,11 @@ async def health() -> dict[str, Any]:
     try:
         import torch
 
-        gpu_available = bool(torch.cuda.is_available())
+        gpu_available = bool(torch.cuda.is_available() or torch.backends.mps.is_available())
     except Exception:
         gpu_available = False
     if service.ready:
-        runtime_mode = "gpu" if str(service.device).startswith("cuda") else "cpu"
+        runtime_mode = "gpu" if str(service.device).startswith(("cuda", "mps")) else "cpu"
     else:
         # Still loading: report the device the GPU-only load is targeting.
         runtime_mode = "gpu" if gpu_available else "cpu"

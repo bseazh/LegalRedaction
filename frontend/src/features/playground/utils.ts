@@ -8,7 +8,7 @@ import {
   getSelectionToneClasses,
   type SelectionTone,
 } from '@/ui/selectionPalette';
-import type { BoundingBox, Entity, VisionDetectionResponse } from './types';
+import type { BoundingBox, Entity, NerResponse, VisionDetectionResponse } from './types';
 
 export { clampPopoverInCanvas } from '@/utils/domSelection';
 
@@ -18,6 +18,16 @@ export async function safeJson<T = unknown>(res: Response): Promise<T> {
   } catch {
     throw new Error('Non-JSON response from server');
   }
+}
+
+export function buildHybridNerRequest(selectedTypes: string[]): { entity_type_ids?: string[] } {
+  return selectedTypes.length > 0 ? { entity_type_ids: selectedTypes } : {};
+}
+
+export function assertNerSucceeded(result: NerResponse): void {
+  if (!result.recognition_failed) return;
+  const detail = typeof result.error === 'string' ? result.error.trim() : '';
+  throw new Error(detail ? `识别失败：${detail}` : t('playground.recognizeFailed'));
 }
 
 export function previewEntityMarkStyle(entity: Entity): React.CSSProperties {
@@ -36,6 +46,8 @@ export function previewEntityHoverRingClass(source: Entity['source']): string {
 export function getModePreview(mode: string, sampleEntity?: Entity) {
   const name = sampleEntity?.text || t('editor.sampleName');
   switch (mode) {
+    case 'pseudonym':
+      return `${name} -> 林安然`;
     case 'smart':
       return `${name} -> [${t('editor.sampleSmart')}]`;
     case 'mask':

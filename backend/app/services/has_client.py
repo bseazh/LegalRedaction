@@ -78,6 +78,9 @@ _TYPE_GUIDANCE_DESC_MAX_CHARS = 96
 _HEALTH_CHECK_CACHE_SEC = 5.0
 # 健康检查请求超时秒数
 _HEALTH_CHECK_TIMEOUT_SEC = 5.0
+# A small local model can occasionally finish with an empty/non-JSON answer.
+# Retry the same deterministic prompt once before treating the chunk as empty.
+_NER_PARSE_ATTEMPTS = 2
 
 
 @dataclass
@@ -245,6 +248,34 @@ class HaSClient:
                 return f"json_repair:{mode}", parsed
 
         return "failed", None
+
+    def _call_ner_json_with_retry(
+        self,
+        messages: list[dict],
+        *,
+        max_tokens: int,
+        temperature: float | None,
+    ) -> tuple[str, dict[str, Any] | None, str]:
+        parse_mode = "failed"
+        response = ""
+        for attempt in range(1, _NER_PARSE_ATTEMPTS + 1):
+            response = self._call_model(
+                messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            parse_mode, result = self._try_parse_json_object(response)
+            if result is not None:
+                if attempt > 1:
+                    logger.info("HaS NER JSON parse recovered on attempt %d", attempt)
+                return parse_mode, result, response
+            logger.warning(
+                "HaS NER response could not be parsed as JSON (attempt %d/%d): %.200s",
+                attempt,
+                _NER_PARSE_ATTEMPTS,
+                response,
+            )
+        return parse_mode, None, response
 
     @staticmethod
     def _trim_truncated_tail_value(result: dict[str, Any]) -> dict[str, Any]:
@@ -536,10 +567,12 @@ If nothing matches, return {{}}.
 
         try:
             started = time.perf_counter()
-            response = self._call_model(messages, max_tokens=max_tokens, temperature=temperature)
-            parse_mode, result = self._try_parse_json_object(response)
+            parse_mode, result, response = self._call_ner_json_with_retry(
+                messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
             if result is None:
-                logger.warning("HaS NER response could not be parsed as JSON: %.200s", response)
                 if type_guidance is None and len(types) > _NER_REBATCH_TYPE_THRESHOLD:
                     from app.core.config import settings
                     target = max(_NER_TYPE_BATCH_TARGET_TOKENS_FLOOR, int(settings.HAS_NER_TYPE_BATCH_TARGET_TOKENS))

@@ -497,13 +497,7 @@ class TextRedactorMixin:
                 if replacement_inserts:
                     page.apply_redactions()
                     for rect, new_text in replacement_inserts:
-                        page.insert_textbox(
-                            rect,
-                            new_text,
-                            fontsize=self._fit_pdf_replacement_font_size(rect, new_text),
-                            color=(0, 0, 0),
-                            align=fitz.TEXT_ALIGN_LEFT,
-                        )
+                        self._insert_pdf_replacement(page, rect, new_text)
 
             doc.save(output_path, garbage=PDF_SAVE_GARBAGE_LEVEL, deflate=True, clean=True)
         finally:
@@ -511,8 +505,52 @@ class TextRedactorMixin:
 
         return redacted_count
 
+    @classmethod
+    def _insert_pdf_replacement(cls, page: fitz.Page, rect: fitz.Rect, text: str) -> None:
+        """在安全删除原文后可靠写入中文替代文字。"""
+        if not text:
+            return
+        fontname = "china-s"
+        fontsize = cls._fit_pdf_replacement_font_size(rect, text, fontname=fontname)
+        required_width = fitz.get_text_length(text, fontname=fontname, fontsize=fontsize) + 2
+        target = fitz.Rect(
+            rect.x0,
+            max(page.rect.y0, rect.y0 - 1),
+            min(page.rect.x1 - 2, max(rect.x1, rect.x0 + required_width)),
+            min(page.rect.y1, rect.y1 + max(2.0, rect.height * 0.45)),
+        )
+        result = page.insert_textbox(
+            target,
+            text,
+            fontname=fontname,
+            fontsize=fontsize,
+            color=(0, 0, 0),
+            align=fitz.TEXT_ALIGN_LEFT,
+            overlay=True,
+        )
+        if result >= 0:
+            return
+
+        fallback_size = max(4.0, min(fontsize, rect.height * 0.72))
+        baseline = min(page.rect.y1 - 1, rect.y1 - max(0.5, rect.height * 0.08))
+        inserted = page.insert_text(
+            (rect.x0, baseline),
+            text,
+            fontname=fontname,
+            fontsize=fallback_size,
+            color=(0, 0, 0),
+            overlay=True,
+        )
+        if inserted <= 0:
+            raise RuntimeError(f"PDF replacement text could not be written: {text!r}")
+
     @staticmethod
-    def _fit_pdf_replacement_font_size(rect: fitz.Rect, text: str) -> float:
+    def _fit_pdf_replacement_font_size(
+        rect: fitz.Rect,
+        text: str,
+        *,
+        fontname: str = "china-s",
+    ) -> float:
         """Choose a conservative font size for inline PDF replacement labels."""
         if not text:
             return PDF_LABEL_FONT_SIZE_MAX
@@ -520,7 +558,7 @@ class TextRedactorMixin:
             PDF_LABEL_FONT_SIZE_MIN,
             min(PDF_LABEL_FONT_SIZE_MAX, rect.height * PDF_LABEL_HEIGHT_FONT_RATIO),
         )
-        estimated_width = fitz.get_text_length(text, fontsize=base_size)
+        estimated_width = fitz.get_text_length(text, fontname=fontname, fontsize=base_size)
         if estimated_width <= max(1.0, rect.width):
             return base_size
         return max(

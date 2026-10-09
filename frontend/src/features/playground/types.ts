@@ -121,6 +121,11 @@ export interface ParseResponse {
 /** POST /api/v1/files/:id/ner/hybrid */
 export interface NerResponse {
   entities: Array<Record<string, unknown>>;
+  entity_count?: number;
+  entity_summary?: Record<string, number>;
+  warnings?: string[];
+  recognition_failed?: boolean;
+  error?: string | null;
 }
 
 /** POST /api/v1/redaction/execute */

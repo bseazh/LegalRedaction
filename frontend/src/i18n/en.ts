@@ -93,6 +93,7 @@ const enBase: Record<string, string> = {
   'mode.smart': 'Smart Replace',
   'mode.mask': 'Mask',
   'mode.structured': 'Structured Tags',
+  'mode.pseudonym': 'Natural Pseudonyms',
 
   'job.status.draft': 'Draft',
   'job.status.queued': 'Queued',
@@ -519,6 +520,8 @@ const enBase: Record<string, string> = {
   'batchWizard.step1.textMethodStructured': 'Clear labels',
   'batchWizard.step1.textMethodSmart': 'Natural replacements',
   'batchWizard.step1.textMethodMask': 'Simple masks',
+  'batchWizard.step1.textMethodPseudonym': 'Natural pseudonyms',
+  'batchWizard.step1.textModeBulletPseudonym': 'Replace values with stable fictional names, organizations, and addresses',
   'batchWizard.step1.textModeBulletStructured':
     'Clear labels - replace sensitive text with labels such as [Name] or [ID number]',
   'batchWizard.step1.textModeBulletSmart':

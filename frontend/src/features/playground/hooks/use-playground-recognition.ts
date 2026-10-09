@@ -143,8 +143,8 @@ export function usePlaygroundRecognition() {
   const selectedVisualFeatureTypesRef = useRef(selectedVisualFeatureTypes);
   const [pipelines, setPipelines] = useState<PipelineConfig[]>(cachedPipelines);
   const [typeTab, setTypeTab] = useState<'text' | 'vision'>('text');
-  const [replacementMode, setReplacementMode] = useState<'structured' | 'smart' | 'mask'>(
-    'structured',
+  const [replacementMode, setReplacementMode] = useState<'structured' | 'smart' | 'mask' | 'pseudonym'>(
+    'pseudonym',
   );
   // 成品水印文案（W2-1）：只作用于最终执行输出，预览不加
   const [watermarkText, setWatermarkText] = useState('');
@@ -271,7 +271,7 @@ export function usePlaygroundRecognition() {
         setPlaygroundPresetTextId(null);
         setActivePresetTextId(null);
         setSelectedTypes([...playgroundDefaultTextTypeIds]);
-        setReplacementMode('structured');
+        setReplacementMode('pseudonym');
         setPresetApplySeq((s) => s + 1);
         return;
       }
@@ -342,7 +342,7 @@ export function usePlaygroundRecognition() {
         selectedEntityTypeIds: selectedTypes,
         ocrHasTypes: [],
         visualFeatureTypes: [],
-        replacementMode: 'structured',
+        replacementMode,
       });
       await invalidatePresets();
       setPlaygroundPresetTextId(created.id);
@@ -354,7 +354,7 @@ export function usePlaygroundRecognition() {
     } finally {
       setPresetSaving(false);
     }
-  }, [closePresetDialog, presetDialogName, selectedTypes, invalidatePresets]);
+  }, [closePresetDialog, presetDialogName, selectedTypes, replacementMode, invalidatePresets]);
 
   const saveVisionPresetFromPlayground = useCallback(async () => {
     const name = presetDialogName.trim();

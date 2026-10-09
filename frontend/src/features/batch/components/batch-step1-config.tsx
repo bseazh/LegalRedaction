@@ -111,7 +111,9 @@ function BatchStep1ConfigInner() {
         )
       : '';
   const textModeLabel =
-    textRedactionMode === 'smart'
+    textRedactionMode === 'pseudonym'
+      ? t('batchWizard.step1.textMethodPseudonym')
+      : textRedactionMode === 'smart'
       ? t('batchWizard.step1.textMethodSmart')
       : textRedactionMode === 'mask'
         ? t('batchWizard.step1.textMethodMask')

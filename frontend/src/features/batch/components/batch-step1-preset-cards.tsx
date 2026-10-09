@@ -91,6 +91,7 @@ function BatchStep1PresetCardsInner({
   };
 
   const textModeBullets = [
+    { key: 'pseudonym', label: t('batchWizard.step1.textModeBulletPseudonym') },
     { key: 'structured', label: t('batchWizard.step1.textModeBulletStructured') },
     { key: 'smart', label: t('batchWizard.step1.textModeBulletSmart') },
     { key: 'mask', label: t('batchWizard.step1.textModeBulletMask') },
@@ -197,7 +198,7 @@ function BatchStep1PresetCardsInner({
                 <Select
                   disabled={disabled}
                   value={textRedactionMode}
-                  onValueChange={(value: 'structured' | 'smart' | 'mask') =>
+                  onValueChange={(value: 'structured' | 'smart' | 'mask' | 'pseudonym') =>
                     setCfg((current) => ({ ...current, replacementMode: value }))
                   }
                 >
@@ -205,6 +206,9 @@ function BatchStep1PresetCardsInner({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="pseudonym">
+                      {t('batchWizard.step1.textMethodPseudonym')}
+                    </SelectItem>
                     <SelectItem value="structured">
                       {t('batchWizard.step1.textMethodStructured')}
                     </SelectItem>

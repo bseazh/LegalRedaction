@@ -67,7 +67,7 @@ class PresetPayload(BaseModel):
         description="Coreference/linkage groups covered by the preset.",
         examples=[["organization_like", "person_like"]],
     )
-    replacementMode: Literal["structured", "smart", "mask"] = Field(
+    replacementMode: Literal["structured", "smart", "mask", "pseudonym"] = Field(
         default="structured",
         description="How detected content is replaced in redacted output.",
         examples=["structured"],
@@ -121,7 +121,7 @@ class PresetUpdate(BaseModel):
         description="Replacement linkage groups. Omit to keep the current value.",
         examples=[["organization_like", "person_like"]],
     )
-    replacementMode: Literal["structured", "smart", "mask"] | None = Field(
+    replacementMode: Literal["structured", "smart", "mask", "pseudonym"] | None = Field(
         default=None,
         description="Replacement strategy for future redaction runs. Omit to keep the current value.",
         examples=["mask"],
@@ -245,5 +245,4 @@ class PresetImportRequest(BaseModel):
         description="True merges new user presets with existing ones; false replaces the user preset store.",
         examples=[False],
     )
-
 

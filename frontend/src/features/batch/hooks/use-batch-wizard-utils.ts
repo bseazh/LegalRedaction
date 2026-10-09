@@ -273,7 +273,9 @@ export async function fetchBatchPreviewMap(
   });
   if (payload.length === 0) return {};
   const replacement_mode =
-    replacementMode === 'smart'
+    replacementMode === 'pseudonym'
+      ? ReplacementMode.PSEUDONYM
+      : replacementMode === 'smart'
       ? ReplacementMode.SMART
       : replacementMode === 'mask'
         ? ReplacementMode.MASK

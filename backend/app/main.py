@@ -620,10 +620,13 @@ async def services_health():
         "gpu_only_mode",
         "cpu_fallback_risk",
     ):
-        if key in visual_chat_detail:
-            visual_detail[key] = visual_chat_detail[key]
-        elif key in visual_detect_detail:
+        # /health reports the device actually holding the weights. Prefer it
+        # over the /v1/models endpoint, whose runtime fields may come from a
+        # static deployment hint (for example CUDA in the original project).
+        if key in visual_detect_detail:
             visual_detail[key] = visual_detect_detail[key]
+        elif key in visual_chat_detail:
+            visual_detail[key] = visual_chat_detail[key]
     services["visual_features"] = {
         "name": "LocateAnything-3B Visual Features",
         "status": combine_visual_status(

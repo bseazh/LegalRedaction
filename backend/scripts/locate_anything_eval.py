@@ -301,12 +301,26 @@ class LocateAnythingWorker:
         from transformers import AutoModel, AutoProcessor, AutoTokenizer
 
         self.torch = torch
-        if not torch.cuda.is_available():
-            # Project rule: GPU-only, no silent CPU fallback (same philosophy as
-            # ocr_server's _require_gpu_or_exit). Fail loudly instead of quietly
-            # running a 3B model on CPU.
-            raise RuntimeError("LocateAnything requires CUDA, but torch.cuda.is_available() is False")
-        self.device = "cuda"
+        requested_device = os.environ.get("LOCATE_ANYTHING_DEVICE", "auto").strip().lower()
+        if requested_device == "auto":
+            if torch.cuda.is_available():
+                requested_device = "cuda"
+            elif torch.backends.mps.is_available():
+                requested_device = "mps"
+            else:
+                requested_device = "cpu"
+        if requested_device == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("LOCATE_ANYTHING_DEVICE=cuda, but CUDA is unavailable")
+        if requested_device == "mps" and not torch.backends.mps.is_available():
+            raise RuntimeError("LOCATE_ANYTHING_DEVICE=mps, but Apple Metal/MPS is unavailable")
+        if requested_device not in {"cuda", "mps", "cpu"}:
+            raise RuntimeError(f"Unsupported LOCATE_ANYTHING_DEVICE={requested_device!r}")
+        self.device = requested_device
+        if self.device == "mps" and dtype_name == "bfloat16":
+            dtype_name = "float16"
+            print("[model] Apple MPS does not use bfloat16 here; switching to float16", flush=True)
+        if self.device == "cpu" and dtype_name == "float16":
+            dtype_name = "float32"
         self.dtype = getattr(torch, dtype_name)
         resolved = self._resolve_model(model_path, backend)
         print(f"[model] loading {resolved} on {self.device} dtype={dtype_name}", flush=True)
@@ -317,6 +331,7 @@ class LocateAnythingWorker:
             resolved,
             torch_dtype=self.dtype,
             trust_remote_code=True,
+            low_cpu_mem_usage=True,
         ).to(self.device).eval()
 
     @staticmethod

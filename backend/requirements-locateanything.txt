@@ -9,5 +9,7 @@ transformers==4.57.1
 peft>=0.13.0
 accelerate>=1.1.0
 safetensors>=0.4.5
-decord==0.6.0
+# No Apple Silicon wheel is published; LocateAnything image inference does not
+# use decord. Keep it for CUDA/Linux video support only.
+decord==0.6.0; platform_system != "Darwin"
 lmdb==1.7.5

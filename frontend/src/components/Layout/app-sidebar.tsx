@@ -57,11 +57,20 @@ export function AppSidebar() {
   const { status } = useAuth();
   const { health, checking, roundTripMs, refresh } = useServiceHealth();
   const isAdmin = Boolean(status?.is_super_admin);
+  const activeSinglePath = /^\/(?:single|playground)\/[^/]+$/.test(location.pathname)
+    ? location.pathname
+    : null;
+  const rememberedSingleFileId = sessionStorage.getItem('playground:last-file-id');
+  const singlePath =
+    activeSinglePath ||
+    (rememberedSingleFileId
+      ? `/single/${encodeURIComponent(rememberedSingleFileId)}`
+      : '/single');
 
   const workflowNavItems: NavItem[] = [
     { path: '/', label: t('nav.start'), sublabel: t('nav.start.sub'), icon: HomeIcon, end: true },
     {
-      path: '/single',
+      path: singlePath,
       label: t('nav.playground'),
       sublabel: t('nav.playground.sub'),
       icon: PlayIcon,

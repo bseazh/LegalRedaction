@@ -361,7 +361,7 @@ def get_visual_features_runtime_detail() -> dict[str, Any]:
         "gpu_provider": provider,
         "gpu_only_mode": True,
         "cpu_fallback_risk": False,
-        "runtime_expectation": "cuda-gpu",
+        "runtime_expectation": "metal-gpu" if provider == "metal" else "cuda-gpu",
         "max_new_tokens": int(_runtime_config_value("LOCATE_ANYTHING_MAX_NEW_TOKENS") or 8192),
     }
 
@@ -374,7 +374,7 @@ def _infer_gpu_provider(device: str) -> str:
         return "vulkan"
     if "cuda" in value or value.isdigit():
         return "cuda"
-    if "metal" in value:
+    if "metal" in value or "mps" in value:
         return "metal"
     return "configured"
 

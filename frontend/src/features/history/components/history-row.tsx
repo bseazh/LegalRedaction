@@ -163,6 +163,13 @@ function buildHistoryReviewAction(
   row: FileListItem,
   navLabels: ReturnType<typeof buildJobPrimaryNavigationLabels>,
 ): PrimaryNavAction {
+  if (!row.job_id && row.upload_source === 'playground') {
+    return {
+      kind: 'link',
+      label: navLabels.continueReview,
+      to: `/single/${encodeURIComponent(row.file_id)}`,
+    };
+  }
   const embed = row.job_embed;
   if (!row.job_id || !embed || embed.status !== 'awaiting_review') return { kind: 'none' };
   const rowStatus = String(row.item_status ?? '').toLowerCase();
