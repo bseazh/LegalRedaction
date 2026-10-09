@@ -26,7 +26,7 @@ export TMPDIR=/tmp/legalredaction-tmp
 终端 1：
 
 ```bash
-cd /Users/Apple/Documents/Project/Ryan/Law/002-Anonymize/LegalRedaction
+cd /path/to/PrivacyGuard
 . .venv-mlx/bin/activate
 python3 -m service.local_api
 ```
@@ -34,7 +34,7 @@ python3 -m service.local_api
 终端 2：
 
 ```bash
-cd /Users/Apple/Documents/Project/Ryan/Law/002-Anonymize/LegalRedaction/app
+cd /path/to/PrivacyGuard/app
 npm run tauri dev
 ```
 

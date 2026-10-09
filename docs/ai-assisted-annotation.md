@@ -3,7 +3,7 @@
 ## 一键生成候选
 
 ```bash
-cd /Users/Apple/Documents/Project/Ryan/Law/002-Anonymize/LegalRedaction
+cd /path/to/PrivacyGuard
 python3 -m service.assist_annotation
 ```
 
@@ -35,4 +35,3 @@ python3 -m service.evaluate_simulated
 ```
 
 该报告只统计候选覆盖和规则/模型分歧，不能作为 precision、recall 或 F1。只有人工确认至少 100 个实体后，才运行 `service.evaluate_real` 生成真实指标。
-

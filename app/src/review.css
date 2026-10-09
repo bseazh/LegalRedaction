@@ -1,0 +1,43 @@
+.entity.invalid {
+  border-color: #c53d35;
+  background: #fff2f1;
+}
+
+.offset-warning {
+  color: #b72d27;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.preview-approval {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 8px 0;
+  color: #435064;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.preview-approval input {
+  margin-top: 2px;
+}
+
+.entities {
+  margin-bottom: 260px;
+}
+
+.replacement-mode {
+  display: grid;
+  gap: 5px;
+  color: #435064;
+  font-size: 12px;
+}
+
+.replacement-mode select {
+  width: 100%;
+  padding: 7px;
+  border: 1px solid #c4ccd5;
+  border-radius: 4px;
+  background: #fff;
+}

@@ -1,2 +1,62 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LegalRedaction</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;background:#f5f6f8;color:#18212f}header{background:#18212f;color:white;padding:16px 24px}main{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px}.card{background:white;border:1px solid #dfe3e8;border-radius:9px;padding:16px}.text{white-space:pre-wrap;line-height:1.8;max-height:70vh;overflow:auto}.entity{padding:10px;border:1px solid #dfe3e8;border-radius:7px;margin:8px 0}.entity.ok{border-left:4px solid #18864b;background:#f2fbf5}.entity.no{border-left:4px solid #a75b00;background:#fffaf0}button{padding:7px 10px;border-radius:5px;border:1px solid #bbc4d0;background:#fff;margin:3px;cursor:pointer}.primary{background:#1769d2;color:#fff;border-color:#1769d2}#status{color:#536071;font-size:13px}</style></head><body><header><b>LegalRedaction</b><span id="status"> 本地服务未连接</span></header><main><section class="card"><h2>导入文件</h2><input id="file" type="file" accept=".txt,.md,.eml,.docx,.pdf"><p id="fileName"></p><hr><div id="content" class="text">选择 TXT、DOCX 或有文本层的 PDF 后开始识别。</div></section><aside class="card"><h2>候选实体</h2><div id="entities"></div><button class="primary" onclick="exportRedacted()">导出脱敏文本</button></aside></main><script type="module" src="/src/main.js"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LegalRedaction</title>
+  <link rel="stylesheet" href="/src/styles.css">
+  <link rel="stylesheet" href="/src/review.css">
+</head>
+<body>
+  <header class="app-header">
+    <div><strong>LegalRedaction</strong><span class="subtitle">本地法律文档脱敏</span></div>
+    <span id="status" class="service-status connecting">正在连接本地服务</span>
+  </header>
 
+  <section class="task-band" aria-live="polite">
+    <div class="task-row"><strong id="progressLabel">等待导入文件</strong><span id="requestId"></span></div>
+    <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+    <ol id="phaseList" class="phases">
+      <li data-phase="upload">上传</li><li data-phase="extract">提取文本</li><li data-phase="ner">实体识别</li><li data-phase="review">人工复核</li><li data-phase="export">导出</li>
+    </ol>
+  </section>
+
+  <main>
+    <section class="workspace">
+      <div class="import-bar">
+        <label class="file-button" for="file">选择文件</label>
+        <input id="file" type="file" accept=".txt,.md,.eml,.docx,.pdf" disabled>
+        <div><strong id="fileName">尚未选择文件</strong><small id="fileMeta">支持 TXT、DOCX 和有文本层的 PDF</small></div>
+      </div>
+
+      <nav class="tabs" aria-label="文档视图">
+        <button class="tab active" data-view="source">原文与高亮</button>
+        <button class="tab" data-view="preview">脱敏预览</button>
+      </nav>
+      <div id="sourceView" class="document-view"><div id="content" class="document empty">完成识别后在此显示原文与候选高亮。</div></div>
+      <div id="previewView" class="document-view hidden"><div id="preview" class="document empty">确认或忽略所有候选后，可在此检查脱敏结果。</div></div>
+    </section>
+
+    <aside id="reviewPanel" class="review-panel">
+      <div class="review-heading"><div><h2>候选实体</h2><p id="reviewSummary">尚无候选</p></div><button id="confirmRequired" title="确认所有必须脱敏项" disabled>确认必脱项</button></div>
+      <div id="policyStats" class="policy-stats"></div>
+      <div id="entities" class="entities"><p class="empty-note">导入文档后开始本地识别。</p></div>
+      <div class="export-actions">
+        <p id="exportHint">完成所有候选复核后可导出。</p>
+        <label class="replacement-mode">替换方式
+          <select id="replacementMode">
+            <option value="semantic">语义假名（人员A、机构A）</option>
+            <option value="natural">自然假名（李明、星河科技）</option>
+            <option value="token">技术 Token（&lt;PERSON_001&gt;）</option>
+          </select>
+        </label>
+        <label class="preview-approval"><input id="previewApproved" type="checkbox" disabled> 已核对脱敏预览，确认可以导出</label>
+        <button id="exportText" class="primary" disabled>导出脱敏文本</button>
+        <button id="exportPdf" class="primary" disabled>导出假名化 PDF</button>
+        <button id="exportMapping" disabled>导出加密映射</button>
+      </div>
+    </aside>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

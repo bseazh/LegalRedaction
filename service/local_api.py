@@ -13,13 +13,26 @@ from logging.handlers import RotatingFileHandler
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from .mlx_ner import Qwen3NerBackend, TYPE_NAMES
 from .ner import merge_entities
+from .pdf_redactor import PdfRedactionError, redact_pdf_bytes
 from .redaction_core import Entity, detect_entities, extract_text, tokenize
+
+try:
+    from .mlx_ner import Qwen3NerBackend, TYPE_NAMES
+    MLX_IMPORT_ERROR = None
+except ImportError as exc:
+    Qwen3NerBackend = None
+    MLX_IMPORT_ERROR = exc
+    TYPE_NAMES = {
+        "PERSON": "姓名", "ORGANIZATION": "机构", "ADDRESS": "地址", "DEPARTMENT": "部门", "PROJECT": "项目名",
+        "COURT": "法院", "LAW_FIRM": "律师事务所", "PLAINTIFF": "原告", "DEFENDANT": "被告",
+        "APPLICANT": "申请人", "RESPONDENT": "被申请人", "ATTORNEY": "代理人", "LEGAL_REPRESENTATIVE": "法定代表人",
+    }
 
 ROOT = Path(os.environ.get("LEGALREDACTION_ROOT", Path(__file__).resolve().parents[1])).resolve()
 HOST, PORT = "127.0.0.1", 8766
 MODEL = Path(os.environ.get("LEGALREDACTION_MODEL_DIR", ROOT / "models/qwen3/Qwen3-1.7B-bf16")).resolve()
+NER_MODE = os.environ.get("PRIVACYGUARD_NER_BACKEND", "auto").strip().lower()
 LOG_DIR = Path(os.environ.get("LEGALREDACTION_LOG_DIR", ROOT / "logs")).resolve()
 LOG_FILE = LOG_DIR / "legalredaction.log"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -44,53 +57,86 @@ POLICY = {
 }
 
 
+def recognize_with_fallback(text: str, entity_types: list[str], depth: int = 0) -> tuple[list[Entity], int, int]:
+    engine = backend()
+    entities = engine.recognize(text, entity_types)
+    if engine.last_response_valid:
+        return entities, 0, 0
+    if len(text) <= 1200 or depth >= 2:
+        logger.error("ner_response_abandoned depth=%d chars=%d error=%s", depth, len(text), engine.last_response_error)
+        return [], 0, 1
+    cut = len(text) // 2
+    overlap = min(150, max(0, cut // 4))
+    right_start = max(0, cut - overlap)
+    logger.warning("ner_response_retry_split depth=%d chars=%d left_chars=%d right_chars=%d", depth, len(text), cut + overlap, len(text) - right_start)
+    left, left_retries, left_failures = recognize_with_fallback(text[:cut + overlap], entity_types, depth + 1)
+    right, right_retries, right_failures = recognize_with_fallback(text[right_start:], entity_types, depth + 1)
+    shifted = [Entity(item.type, item.value, right_start + item.start, right_start + item.end, item.confidence, item.source) for item in right]
+    return left + shifted, 1 + left_retries + right_retries, left_failures + right_failures
+
+
 def backend() -> Qwen3NerBackend:
     global _backend
     with _lock:
         if _backend is None:
+            if Qwen3NerBackend is None:
+                raise RuntimeError(
+                    "MLX 语义模型不可用。Windows/Intel Mac 请设置 PRIVACYGUARD_NER_BACKEND=rules 使用规则模式；"
+                    f"原始错误：{MLX_IMPORT_ERROR}"
+                )
             logger.info("model_load_start path=%s", MODEL)
             _backend = Qwen3NerBackend(MODEL)
             logger.info("model_load_done")
         return _backend
 
 
-def analyze(path: Path, job_id: str | None = None) -> dict:
+def analyze(path: Path, job_id: str | None = None, display_name: str | None = None) -> dict:
     started = time.perf_counter()
-    logger.info("analyze_start name=%s suffix=%s size=%d", path.name, path.suffix.lower(), path.stat().st_size)
+    log_name = display_name or path.name
+    logger.info("analyze_start id=%s name=%s suffix=%s size=%d", job_id or "direct", log_name, path.suffix.lower(), path.stat().st_size)
     text = extract_text(path)
-    logger.info("extract_done name=%s chars=%d", path.name, len(text))
+    logger.info("extract_done id=%s name=%s chars=%d elapsed_ms=%d", job_id or "direct", log_name, len(text), round((time.perf_counter() - started) * 1000))
     rules = detect_entities(text)
-    logger.info("rules_done name=%s entities=%d", path.name, len(rules))
+    logger.info("rules_done id=%s name=%s entities=%d", job_id or "direct", log_name, len(rules))
     queue_started = time.perf_counter()
-    logger.info("ner_queue_wait name=%s", path.name)
+    logger.info("ner_queue_wait id=%s name=%s", job_id or "direct", log_name)
     with _inference_lock:
-        logger.info("ner_queue_acquired name=%s wait_ms=%d", path.name, round((time.perf_counter() - queue_started) * 1000))
+        logger.info("ner_queue_acquired id=%s name=%s wait_ms=%d", job_id or "direct", log_name, round((time.perf_counter() - queue_started) * 1000))
         ner = []
         step = NER_CHUNK_CHARS - NER_CHUNK_OVERLAP
         chunks = max(1, (max(0, len(text) - NER_CHUNK_OVERLAP) + step - 1) // step)
-        logger.info("ner_chunks_start name=%s chunks=%d chunk_chars=%d", path.name, chunks, NER_CHUNK_CHARS)
+        logger.info("ner_chunks_start id=%s name=%s chunks=%d chunk_chars=%d", job_id or "direct", log_name, chunks, NER_CHUNK_CHARS)
         seen = set()
-        for chunk_index, offset in enumerate(range(0, len(text), step), start=1):
+        parse_retries = 0
+        parse_failures = 0
+        offsets = [] if NER_MODE == "rules" else range(0, len(text), step)
+        for chunk_index, offset in enumerate(offsets, start=1):
             chunk = text[offset : offset + NER_CHUNK_CHARS]
             if not chunk.strip():
                 continue
             if job_id:
                 with _jobs_lock:
                     _jobs[job_id].update({"status": "running", "phase": "ner", "chunk": chunk_index, "chunks": chunks, "progress": min(95, 30 + round(chunk_index * 65 / chunks)), "message": f"模型识别中：第 {chunk_index} / {chunks} 段"})
-            for entity in backend().recognize(chunk, list(TYPE_NAMES)):
+            logger.info("ner_chunk_start id=%s name=%s chunk=%d chunks=%d offset=%d chars=%d", job_id or "direct", log_name, chunk_index, chunks, offset, len(chunk))
+            chunk_started = time.perf_counter()
+            chunk_entities, chunk_retries, chunk_failures = recognize_with_fallback(chunk, list(TYPE_NAMES))
+            parse_retries += chunk_retries
+            parse_failures += chunk_failures
+            for entity in chunk_entities:
                 start, end = offset + entity.start, offset + entity.end
                 key = (entity.type, start, end, entity.value)
                 if key not in seen:
                     seen.add(key)
                     ner.append(Entity(entity.type, entity.value, start, end, entity.confidence, entity.source))
+            logger.info("ner_chunk_done id=%s name=%s chunk=%d chunks=%d total_entities=%d retries=%d failures=%d elapsed_ms=%d", job_id or "direct", log_name, chunk_index, chunks, len(ner), chunk_retries, chunk_failures, round((time.perf_counter() - chunk_started) * 1000))
             if offset + NER_CHUNK_CHARS >= len(text):
                 break
-        logger.info("ner_chunks_done name=%s chunks=%d unique_entities=%d", path.name, chunks, len(ner))
-    logger.info("ner_done name=%s entities=%d elapsed_ms=%d", path.name, len(ner), round((time.perf_counter() - started) * 1000))
+        logger.info("ner_chunks_done id=%s name=%s chunks=%d unique_entities=%d mode=%s", job_id or "direct", log_name, chunks, len(ner), NER_MODE)
+    logger.info("ner_done id=%s name=%s entities=%d elapsed_ms=%d", job_id or "direct", log_name, len(ner), round((time.perf_counter() - started) * 1000))
     entities = merge_entities(rules, ner)
-    logger.info("analyze_done name=%s entities=%d elapsed_ms=%d", path.name, len(entities), round((time.perf_counter() - started) * 1000))
+    logger.info("analyze_done id=%s name=%s rules=%d ner=%d entities=%d elapsed_ms=%d", job_id or "direct", log_name, len(rules), len(ner), len(entities), round((time.perf_counter() - started) * 1000))
     payload_entities = [entity.__dict__ | {"policy": POLICY.get(entity.type, "manual_review")} for entity in entities]
-    return {"path": str(path), "name": path.name, "text": text, "entities": payload_entities, "supported_types": list(TYPE_NAMES), "policy": POLICY}
+    return {"path": str(path), "name": path.name, "text": text, "entities": payload_entities, "supported_types": list(TYPE_NAMES), "policy": POLICY, "diagnostics": {"parse_retries": parse_retries, "parse_failures": parse_failures, "chunks": chunks, "ner_mode": NER_MODE}}
 
 
 def run_job(job_id: str, name: str, raw: bytes, suffix: str) -> None:
@@ -100,7 +146,8 @@ def run_job(job_id: str, name: str, raw: bytes, suffix: str) -> None:
             temporary.write(raw); temp_path = Path(temporary.name)
         with _jobs_lock:
             _jobs[job_id].update({"phase": "extract", "message": "正在提取文本"})
-        result = analyze(temp_path, job_id)
+        logger.info("job_start id=%s name=%s suffix=%s size=%d", job_id, name, suffix, len(raw))
+        result = analyze(temp_path, job_id, name)
         result["name"] = name; result["path"] = "local-upload"
         with _jobs_lock:
             _jobs[job_id].update({"status": "done", "phase": "done", "progress": 100, "message": f"识别完成：{len(result['entities'])} 个候选", "result": result})
@@ -123,7 +170,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204); self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Request-ID"); self.send_header("Access-Control-Allow-Private-Network", "true"); self.send_header("Access-Control-Max-Age", "600"); self.end_headers()
 
     def do_GET(self) -> None:
-        if self.path == "/health": self.send_json(200, {"ok": True, "runtime": "MLX", "model": str(MODEL)}); return
+        if self.path == "/health": self.send_json(200, {"ok": True, "runtime": "rules" if NER_MODE == "rules" else "MLX", "model": str(MODEL), "pdf_redaction": True}); return
         if self.path.startswith("/jobs/"):
             job_id = self.path.split("/", 2)[-1]
             with _jobs_lock:
@@ -132,19 +179,30 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(404, {"error": "not found"})
 
     def do_POST(self) -> None:
-        if self.path not in {"/analyze", "/analyze-upload"}: self.send_json(404, {"error": "not found"}); return
+        if self.path not in {"/analyze", "/analyze-upload", "/redact-pdf-upload"}: self.send_json(404, {"error": "not found"}); return
         request_id = self.headers.get("X-Request-ID") or uuid.uuid4().hex[:12]
         self._request_id = request_id
         started = time.perf_counter()
         logger.info("request_start id=%s method=POST path=%s content_length=%s", request_id, self.path, self.headers.get("Content-Length", "0"))
         try:
             length = int(self.headers.get("Content-Length", "0")); payload = json.loads(self.rfile.read(length))
-            if self.path == "/analyze-upload":
+            if self.path == "/redact-pdf-upload":
+                name = Path(str(payload.get("name", "document.pdf"))).name
+                if Path(name).suffix.lower() != ".pdf": raise ValueError("PDF redaction requires a .pdf file")
+                raw = base64.b64decode(str(payload["data"]), validate=True)
+                entities = payload.get("entities", [])
+                if not isinstance(entities, list): raise ValueError("entities must be an array")
+                mode = str(payload.get("replacement_mode", "semantic"))
+                redacted, audit = redact_pdf_bytes(raw, entities, mode)
+                output_name = f"{Path(name).stem}.pseudonymized.pdf"
+                self.send_json(200, {"name": output_name, "data": base64.b64encode(redacted).decode(), "audit": audit})
+            elif self.path == "/analyze-upload":
                 name = Path(str(payload.get("name", "upload.txt"))).name
                 suffix = Path(name).suffix.lower()
                 if suffix not in {".txt", ".md", ".eml", ".docx", ".pdf"}: raise ValueError("unsupported file type")
                 raw = base64.b64decode(str(payload["data"]), validate=True)
                 job_id = request_id
+                logger.info("job_created id=%s name=%s suffix=%s size=%d", job_id, name, suffix, len(raw))
                 with _jobs_lock:
                     _jobs[job_id] = {"status": "queued", "phase": "queued", "progress": 0, "name": name, "message": "已排队"}
                 threading.Thread(target=run_job, args=(job_id, name, raw, suffix), daemon=True).start()
@@ -155,6 +213,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, analyze(path))
         except BrokenPipeError:
             logger.warning("request_client_disconnected id=%s", request_id)
+        except (PdfRedactionError, ValueError) as exc:
+            logger.warning("request_rejected id=%s type=%s error=%s", request_id, type(exc).__name__, exc)
+            self.send_json(400, {"error": str(exc)})
         except Exception as exc:
             logger.error("request_error id=%s type=%s error=%s\n%s", request_id, type(exc).__name__, exc, traceback.format_exc())
             self.send_json(400, {"error": str(exc)})

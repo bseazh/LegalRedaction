@@ -1,0 +1,4 @@
+# Windows currently runs the deterministic rules engine. A cross-platform semantic
+# model backend is tracked separately; MLX cannot run on Windows.
+PyMuPDF==1.26.4
+pyinstaller==6.22.0

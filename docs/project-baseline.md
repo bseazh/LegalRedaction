@@ -12,8 +12,8 @@
 
 测试材料保留在外部资产目录，不复制进项目仓库：
 
-- `/Users/Apple/Documents/Project/Ryan/Law/002-Anonymize/000-Assets/Assets/【测试资料】`
-- `/Users/Apple/Documents/Project/Ryan/Law/002-Anonymize/000-Assets/Assets/01_原始材料_请投喂Agent`
+- 本地脱敏测试资料目录（不提交到 Git）
+- 本地真实材料目录（不提交文件名、路径或内容）
 
 材料类型包括 PDF、DOCX、图片、TXT、CSV、XLSX、EML、VCF、ICS、JSON、ZIP 和 WAV。部分材料可能包含真实个人、案件或商业信息，因此开发阶段只使用必要文件，并避免把原文、提取文本或识别结果提交到 Git。
 
@@ -61,4 +61,3 @@
 3. 规则 + 本地 NER。
 
 记录召回率、误报率、人工修正次数、处理耗时、内存占用和导出结果可用性。先完成 P0，再决定是否扩大 OCR 和文件格式范围。
-

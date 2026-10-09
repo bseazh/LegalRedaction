@@ -5,7 +5,7 @@
 先生成 AI 辅助候选：
 
 ```bash
-cd /Users/Apple/Documents/Project/Ryan/Law/002-Anonymize/LegalRedaction
+cd /path/to/PrivacyGuard
 python3 -m service.assist_annotation
 python3 -m service.annotation_ui
 ```

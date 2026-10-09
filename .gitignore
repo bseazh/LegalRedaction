@@ -11,6 +11,9 @@ app/src-tauri/target/
 dist-sidecar/
 build/pyinstaller/
 build/*.spec
+model-release/
+reports/
+tests/real_samples.json
 __pycache__/
 *.pyc
 .DS_Store
