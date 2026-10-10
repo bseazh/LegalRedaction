@@ -3,6 +3,7 @@ param(
     [switch]$InstallPython
 )
 $ErrorActionPreference = "Stop"
+$env:PYTHONUTF8 = "1"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $PackageDirectory) { $PackageDirectory = Split-Path -Parent $Root }
 if (-not [Environment]::Is64BitOperatingSystem) { throw "此离线包仅支持 Windows x64。" }
@@ -64,6 +65,6 @@ Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -m pip install --no-
 Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\ocr") -r (Join-Path $Root "offline\requirements\windows-ocr.txt") } "安装 OCR 离线依赖失败"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $Root "backend\data"),(Join-Path $Root "backend\uploads"),(Join-Path $Root "backend\outputs"),(Join-Path $Root "logs") | Out-Null
-Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -c "import fastapi, fitz, docx; print('应用环境正常')" } "应用环境导入检查失败"
-Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -c "import paddle, paddleocr; print('OCR 环境正常')" } "OCR 环境导入检查失败"
+Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -c "import fastapi, fitz, docx; print('Application environment OK')" } "应用环境导入检查失败"
+Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -c "import paddle, paddleocr; print('OCR environment OK')" } "OCR 环境导入检查失败"
 Write-Host "离线安装完成。运行 .\Start-PrivacyGuard.ps1 启动。"
