@@ -45,6 +45,7 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 - [安装入口与版本选择](./docs/installation/README.md)
 - [macOS 安装](./docs/installation/macos.md)
 - [Windows 安装](./docs/installation/windows.md)
+- [standard 离线包](./docs/installation/offline-standard.md)
 - [让 Agent 引导安装](./docs/installation/agent-guide.md)
 - [常见问题](./docs/installation/faq.md)
 
@@ -60,7 +61,7 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile standard
 ```
 
-检查完成后再按报告选择基础版、标准版或完整视觉版。公司、律所、机构或生产环境使用前，请先阅读 [LICENSE](./LICENSE) 和第三方模型许可。
+检查完成后再按报告选择基础版、标准版或完整视觉版。公司、律所、机构或生产环境使用前，请先阅读 [LICENSE](./LICENSE) 和第三方模型许可。仓库许可证不会自动授予运行包再分发权；公开上传到 Release 或其他下载服务前必须先取得书面许可。
 
 ## 概览
 

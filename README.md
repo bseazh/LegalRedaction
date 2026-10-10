@@ -45,6 +45,7 @@ Do not start by downloading every model. First choose an installation profile an
 - [Installation entry](./docs/installation/README.md)
 - [macOS guide](./docs/installation/macos.md)
 - [Windows guide](./docs/installation/windows.md)
+- [standard offline packages](./docs/installation/offline-standard.md)
 - [Agent-guided installation](./docs/installation/agent-guide.md)
 - [Installation FAQ](./docs/installation/faq.md)
 
@@ -56,7 +57,7 @@ Do not start by downloading every model. First choose an installation profile an
 powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile standard
 ```
 
-The doctor does not install packages or download models. Organizational or production use must clear the project and third-party licenses before installation.
+The doctor does not install packages or download models. Organizational or production use must clear the project and third-party licenses before installation. The repository license does not automatically permit redistribution of runtime bundles; obtain written permission before publishing offline packages.
 
 ## Overview
 

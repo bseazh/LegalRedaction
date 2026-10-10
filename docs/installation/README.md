@@ -34,6 +34,7 @@ powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile sta
 - [macOS](./macos.md)
 - [Windows](./windows.md)
 - [模型权重](./models.md)
+- [standard 离线包](./offline-standard.md)
 - [Agent 安装向导](./agent-guide.md)
 - [FAQ](./faq.md)
 
