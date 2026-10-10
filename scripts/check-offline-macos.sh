@@ -2,8 +2,11 @@
 set -u
 
 TARGET_DIR="${1:-$HOME/Documents/PrivacyGuard/v0.1.0}"
+SPEED_MBPS="${2:-0}"
 FAILURES=0
 WARNINGS=0
+DOWNLOAD_GIB="1.65"
+WHEEL_COUNT="166"
 
 ok() { print "[OK] $1"; }
 warn() { WARNINGS=$((WARNINGS + 1)); print "[WARN] $1"; }
@@ -49,8 +52,25 @@ for port in 8000 8080 8082; do
 done
 
 print "------------------------------------------------"
+print "Installation plan"
+print "Files to download: 4 (macOS runtime, HaS model, PaddleOCR model, SHA256SUMS)"
+print "Download size: about ${DOWNLOAD_GIB} GiB; bundled Python wheels: $WHEEL_COUNT"
+if [[ "$SPEED_MBPS" == <-> || "$SPEED_MBPS" == <->.<-> ]] && (( ${SPEED_MBPS%.*} > 0 )); then
+  DOWNLOAD_MINUTES="$(awk -v gib="$DOWNLOAD_GIB" -v mbps="$SPEED_MBPS" 'BEGIN {print int((gib*8192/mbps/60*1.2)+0.999)}')"
+  print "Estimated download at $SPEED_MBPS Mbps: about $DOWNLOAD_MINUTES minutes (includes 20% overhead)"
+else
+  print "Estimated download: 10 Mbps 27-35 min; 50 Mbps 6-10 min; 100 Mbps 3-6 min"
+  print "Pass the measured Mbps as argument 2 for a machine-specific estimate."
+fi
+if (( RAM_GB >= 16 )); then
+  print "Estimated install + first startup: 10-25 minutes"
+else
+  print "Estimated install + first startup: 20-45 minutes; avoid other memory-heavy apps"
+fi
+print "Expected disk after extraction: about 8-10 GB; keep 15 GB free for logs and documents."
+
+print "------------------------------------------------"
 print "Bundled: frontend, Python wheels, Python 3.11 installer, llama.cpp, HaS and PaddleOCR model packages."
 print "Not required: Node.js, npm, Git, Homebrew, WSL, Docker, CUDA."
 print "Result: $FAILURES failure(s), $WARNINGS warning(s)"
 (( FAILURES == 0 )) || exit 2
-

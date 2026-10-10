@@ -1,8 +1,13 @@
-param([string]$TargetDirectory = "D:\PrivacyGuard\v0.1.0")
+param(
+    [string]$TargetDirectory = "D:\PrivacyGuard\v0.1.0",
+    [double]$SpeedMbps = 0
+)
 
 $ErrorActionPreference = "SilentlyContinue"
 $Failures = 0
 $Warnings = 0
+$DownloadGiB = 1.61
+$WheelCount = 164
 function Ok($Message) { Write-Host "[OK] $Message" -ForegroundColor Green }
 function Warn($Message) { $script:Warnings++; Write-Host "[WARN] $Message" -ForegroundColor Yellow }
 function Fail($Message) { $script:Failures++; Write-Host "[FAIL] $Message" -ForegroundColor Red }
@@ -48,6 +53,21 @@ foreach ($Port in @(8000,8080,8082)) {
     $Listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($Listener) { Warn "Port $Port is already in use by PID $($Listener.OwningProcess)." } else { Ok "Port $Port is available" }
 }
+
+Write-Host "------------------------------------------------"
+Write-Host "Installation plan"
+Write-Host "Files to download: 4 (Windows runtime, HaS model, PaddleOCR model, SHA256SUMS)"
+Write-Host "Download size: about $DownloadGiB GiB; bundled Python wheels: $WheelCount"
+if ($SpeedMbps -gt 0) {
+    $DownloadMinutes = [math]::Ceiling(($DownloadGiB * 8192 / $SpeedMbps / 60) * 1.2)
+    Write-Host "Estimated download at $SpeedMbps Mbps: about $DownloadMinutes minutes (includes 20% overhead)"
+} else {
+    Write-Host "Estimated download: 10 Mbps 27-35 min; 50 Mbps 6-10 min; 100 Mbps 3-6 min"
+    Write-Host "Pass -SpeedMbps <number> for a machine-specific estimate."
+}
+if ($RamGb -ge 16) { Write-Host "Estimated install + first startup: 10-25 minutes" }
+else { Write-Host "Estimated install + first startup: 20-45 minutes; avoid other memory-heavy apps" }
+Write-Host "Expected disk after extraction: about 8-10 GB; keep 15 GB free for logs and documents."
 
 Write-Host "------------------------------------------------"
 Write-Host "Bundled: frontend, Python wheels, Python 3.11 installer, llama.cpp, HaS and PaddleOCR model packages."

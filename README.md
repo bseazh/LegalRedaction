@@ -65,6 +65,8 @@ Standard offline packages: choose [macOS or Windows on the China mirror](https:/
 
 The v0.1.0 packages have been tested end to end on macOS 14.8.1 Apple Silicon and GitHub-hosted Windows Server 2025 x64: offline dependency installation, model extraction, backend startup, HaS, PaddleOCR readiness, health checks, shutdown, and log collection all completed successfully. Windows validation run: [38041971610](https://github.com/bseazh/PrivacyGuard/actions/runs/38041971610).
 
+After extraction, non-technical users can use the launchers in the app folder: `Install-PrivacyGuard.cmd` / `Launch-PrivacyGuard.cmd` / `Check-PrivacyGuard.cmd` on Windows, or the matching `.command` files on macOS. The launcher safely selects fallback localhost ports when defaults are occupied and writes the actual URL plus a health report under `.run` and `logs`.
+
 ```bash
 ./scripts/doctor-macos.sh standard
 ```

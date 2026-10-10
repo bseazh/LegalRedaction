@@ -4,6 +4,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
+$StartedAt = Get-Date
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $PackageDirectory) { $PackageDirectory = Split-Path -Parent $Root }
 if (-not [Environment]::Is64BitOperatingSystem) { throw "此离线包仅支持 Windows x64。" }
@@ -37,6 +38,7 @@ foreach ($Name in @($HasName, $OcrName)) {
     Verify-Component $Archive
     Invoke-Native { tar -xzf $Archive -C $Root } "解压模型包失败：$Name"
 }
+Write-Host "[1/4] 模型包校验与解压完成。"
 
 $Python = $null
 $Candidates = @(
@@ -55,6 +57,7 @@ if (-not $Python -and $InstallPython) {
 if (-not $Python -or -not (Test-Path $Python)) {
     throw "未找到 Python 3.11。请运行 prerequisites\python-3.11.9-amd64.exe，或重新执行：.\Install-Offline-Windows.ps1 -InstallPython"
 }
+Write-Host "[2/4] Python 3.11 已就绪：$Python"
 
 $AppVenv = Join-Path $Root "backend\.venv-win"
 $OcrVenv = Join-Path $Root "backend\.venv-ocr-win"
@@ -63,8 +66,11 @@ Invoke-Native { & $Python -m venv $AppVenv } "创建应用 Python 环境失败"
 Invoke-Native { & $Python -m venv $OcrVenv } "创建 OCR Python 环境失败"
 Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\app") -r (Join-Path $Root "offline\requirements\windows-app.txt") } "安装应用离线依赖失败"
 Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\ocr") -r (Join-Path $Root "offline\requirements\windows-ocr.txt") } "安装 OCR 离线依赖失败"
+Write-Host "[3/4] 应用与 OCR 离线依赖安装完成。"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $Root "backend\data"),(Join-Path $Root "backend\uploads"),(Join-Path $Root "backend\outputs"),(Join-Path $Root "logs") | Out-Null
 Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -c "import fastapi, fitz, docx; print('Application environment OK')" } "应用环境导入检查失败"
 Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -c "import paddle, paddleocr; print('OCR environment OK')" } "OCR 环境导入检查失败"
-Write-Host "离线安装完成。运行 .\Start-PrivacyGuard.ps1 启动。"
+Write-Host "[4/4] 环境导入检查通过。"
+$Elapsed = [math]::Round(((Get-Date) - $StartedAt).TotalMinutes, 1)
+Write-Host "离线安装完成，用时 $Elapsed 分钟。双击 Launch-PrivacyGuard.cmd 启动。"

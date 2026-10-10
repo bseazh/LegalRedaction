@@ -1,5 +1,6 @@
 #!/bin/zsh
 set -euo pipefail
+START_SECONDS=$SECONDS
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PACKAGE_DIR="${1:-$(cd "$ROOT_DIR/.." && pwd)}"
@@ -29,6 +30,7 @@ for archive in "$HAS_ARCHIVE" "$OCR_ARCHIVE"; do
   verify_component "$candidate"
   tar -xzf "$candidate" -C "$ROOT_DIR"
 done
+print "[1/4] 模型包校验与解压完成。"
 
 PYTHON_BIN=""
 for candidate in \
@@ -44,6 +46,7 @@ if [[ -z "$PYTHON_BIN" ]]; then
   print -u2 "$ROOT_DIR/prerequisites/python-3.11.9-macos11.pkg"
   exit 1
 fi
+print "[2/4] Python 3.11 已就绪：$PYTHON_BIN"
 
 mkdir -p "$ROOT_DIR/backend/data" "$ROOT_DIR/backend/uploads" "$ROOT_DIR/backend/outputs" "$ROOT_DIR/logs"
 rm -rf "$ROOT_DIR/backend/.venv-mac" "$ROOT_DIR/backend/.venv-ocr-mac"
@@ -52,10 +55,13 @@ rm -rf "$ROOT_DIR/backend/.venv-mac" "$ROOT_DIR/backend/.venv-ocr-mac"
 
 "$ROOT_DIR/backend/.venv-mac/bin/python" -m pip install --no-index --find-links "$ROOT_DIR/wheelhouse/app" -r "$ROOT_DIR/offline/requirements/macos-app.txt"
 "$ROOT_DIR/backend/.venv-ocr-mac/bin/python" -m pip install --no-index --find-links "$ROOT_DIR/wheelhouse/ocr" -r "$ROOT_DIR/offline/requirements/macos-ocr.txt"
+print "[3/4] 应用与 OCR 离线依赖安装完成。"
 
 "$ROOT_DIR/backend/.venv-mac/bin/python" -c 'import fastapi, fitz, llama_cpp, docx; print("应用环境正常")'
 "$ROOT_DIR/backend/.venv-ocr-mac/bin/python" -c 'import paddle, paddleocr; print("OCR 环境正常")'
 
-print "离线安装完成。"
-print "启动：$ROOT_DIR/scripts/start-macos.sh"
-print "停止：$ROOT_DIR/scripts/stop-macos.sh"
+print "[4/4] 环境导入检查通过。"
+print "离线安装完成，用时 $(((SECONDS - START_SECONDS + 59) / 60)) 分钟。"
+print "启动：双击 $ROOT_DIR/Launch-PrivacyGuard.command"
+print "检测：双击 $ROOT_DIR/Test-PrivacyGuard.command"
+print "停止：双击 $ROOT_DIR/Stop-PrivacyGuard.command"

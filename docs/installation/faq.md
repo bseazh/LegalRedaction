@@ -16,7 +16,54 @@
 
 ## 离线版还要安装哪些依赖？
 
-大部分依赖已经包含：构建后的前端、Python wheels、Python 3.11 安装器、llama.cpp、HaS 和 PaddleOCR。standard 离线版不需要 Node.js、Git、Homebrew、WSL、Docker、CUDA 或 NVIDIA GPU。Windows 若缺少 Microsoft Visual C++ 2015–2022 x64 Runtime，需要从微软官方下载；macOS 当前包要求 macOS 14+ Apple Silicon。详见 [环境要求](./requirements.md)。
+大部分依赖已经包含：构建后的前端、Python 3.11 安装器、llama.cpp、HaS、PaddleOCR，以及 Windows 约 164 个或 macOS 约 166 个 Python wheel。用户只下载 4 个发行文件。standard 离线版不需要 Node.js、Git、Homebrew、WSL、Docker、CUDA 或 NVIDIA GPU。Windows 若缺少 Microsoft Visual C++ 2015–2022 x64 Runtime，需要从微软官方下载；macOS 当前包要求 macOS 14+ Apple Silicon。详见 [环境要求](./requirements.md)。
+
+## 安装前 Agent 应该检查什么？
+
+Agent 应直接读取系统版本、CPU 架构、内存、目标磁盘空间、端口、Python、PowerShell/tar 和 Windows Visual C++ Runtime，不应把这些问题推给零基础用户。随后输出通过、警告和阻塞项，说明安装路径、下载量、预计时间和系统修改，再集中请求一次确认。
+
+## 预计需要多长时间？
+
+macOS 下载约 1.65 GiB，Windows 约 1.61 GiB。10 Mbps 通常约 27–35 分钟，50 Mbps 约 6–10 分钟，100 Mbps 约 3–6 分钟。16 GB 内存机器安装和首次启动通常再需 10–25 分钟；8 GB 机器可能需要 20–45 分钟。杀毒软件实时扫描、机械硬盘和网络抖动都会增加时间。Agent 应在下载 20–30 秒后根据实际速度更新 ETA，不能保证精确完成时刻。
+
+## 下载卡住或中断怎么办？
+
+不要从头重来。保留已下载文件，用支持断点续传的下载方式继续；先校验已有文件，哈希正确的不得重下。国内镜像超时、TLS 失败或持续无速度时切换 GitHub Release；GitHub 不通时保留国内镜像。不得关闭 TLS 校验，也不要求用户必须使用 VPN。
+
+## 没有 D 盘怎么办？
+
+Windows 向导应先询问用户，然后改用 `%USERPROFILE%\Documents\PrivacyGuard\v0.1.0`。不得因为没有 D 盘直接判定电脑不支持。
+
+## 只有 8 GB 内存能安装吗？
+
+可以尝试 standard，但属于最低配置：关闭浏览器大量标签和其他占内存软件，预留更长安装与 OCR 时间，并避免同时处理多份大扫描 PDF。低于 8 GB 应停止 standard 自动安装，建议换机器或使用更轻的 basic 方案。
+
+## 端口 8000、8080 或 8082 被占用怎么办？
+
+新版启动器会先停止自己上次记录的 PrivacyGuard 进程。若端口仍由其他软件占用，不会强行结束该软件，而是依次选择 `18000/18080/18082`、`28000`、`38000` 系列备用端口。实际地址保存在 `.run/runtime.json`（Windows）或 `.run/runtime.env`（macOS），并由启动器自动在浏览器打开。
+
+## Windows 为什么出现 tzdata 或 colorama 找不到？
+
+这是早期 v0.1.0 Windows wheelhouse 漏掉条件依赖导致的。当前包已同时包含应用和 OCR 所需的 `tzdata`，以及 OCR 所需的 `colorama`。请重新下载当前 Windows runtime 并校验 SHA-256，不需要重新下载两个模型包。
+
+## Windows 安装成功却出现中文 UnicodeEncodeError？
+
+旧安装器在 CP1252 控制台打印中文导入结果会触发此错误。当前安装器已启用 Python UTF-8 并使用 ASCII 导入测试输出。若仍出现，先确认下载的是最新 runtime，并把 `logs` 和完整错误交给 Agent，不要修改系统区域设置。
+
+## 杀毒软件或 Gatekeeper 阻止脚本怎么办？
+
+先核对下载来源和 SHA-256。Windows 只对当前启动进程使用 `ExecutionPolicy Bypass`，不要永久降低策略；macOS 不应关闭 Gatekeeper。若系统仍拦截，由用户在系统提示中针对已校验的单个文件确认，Agent 不得全局关闭安全软件。
+
+## Linux 可以直接使用这两个离线包吗？
+
+不可以。当前 standard 离线发行只有 macOS Apple Silicon 和 Windows x64。Agent 检测到 Linux 后应暂停，说明需要单独制作 Linux x64/arm64 包或采用源码部署，不能拿 Windows/macOS 包强行安装。
+
+## 安装后怎么一键启动和检测？
+
+- Windows：双击 `Launch-PrivacyGuard.cmd`；检测用 `Check-PrivacyGuard.cmd`；停止用 `Stop-PrivacyGuard.cmd`。
+- macOS：双击 `Launch-PrivacyGuard.command`；检测用 `Test-PrivacyGuard.command`；停止用 `Stop-PrivacyGuard.command`。
+
+启动器会等待后端、HaS 和 OCR ready 后再打开浏览器。检测结果写入 `logs/last-check.json`，方便用户直接发给 Agent。
 
 ## 为什么页面显示离线？
 
@@ -37,6 +84,8 @@
 ## 安装完成为什么还要跑虚构样本？
 
 服务在线只说明进程可访问，不代表识别、坐标映射和 PDF 安全删除都正常。验收必须覆盖一次完整导出。
+
+完整步骤和反馈模板见[安装与验收测试方案](./acceptance-test.md)。
 
 ## 可以使用真实合同测试安装吗？
 

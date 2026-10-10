@@ -10,6 +10,8 @@
 
 离线版要求 macOS 14+，至少 10 GB 可用磁盘（建议 15 GB）和 8 GB 内存（建议 16 GB）。运行 `./scripts/check-offline-macos.sh` 可只读检查；离线版不需要 Node.js、Git、Homebrew、WSL 或 CUDA。Python 3.11 官方安装器已包含在运行包内。
 
+解压后按顺序双击：`Install-PrivacyGuard.command` → `Launch-PrivacyGuard.command`。状态检测双击 `Test-PrivacyGuard.command`，停止双击 `Stop-PrivacyGuard.command`。启动器会自动处理端口冲突并打开实际本地地址。
+
 ## 源码安装
 
 ## 1. 检查机器

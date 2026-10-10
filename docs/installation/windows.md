@@ -10,6 +10,8 @@ standard 离线包采用 Windows x64 CPU 兼容模式，不要求 WSL 或 NVIDIA
 
 离线版要求 Windows 10 22H2/Windows 11 x64、PowerShell 5.1+、系统 `tar.exe`、至少 10 GB 可用磁盘（建议 15 GB）和 8 GB 内存（建议 16 GB）。运行 `scripts\check-offline-windows.ps1` 可只读检查。Python 3.11 安装器已包含；若缺少 Microsoft Visual C++ 2015–2022 x64 Runtime，只能从[微软官方地址](https://aka.ms/vs/17/release/vc_redist.x64.exe)下载。
 
+解压后按顺序双击：`Install-PrivacyGuard.cmd` → `Launch-PrivacyGuard.cmd`。状态检测双击 `Check-PrivacyGuard.cmd`，停止双击 `Stop-PrivacyGuard.cmd`。启动器会自动处理端口冲突并打开实际本地地址。
+
 ## 源码安装 / full 视觉方案
 
 ## 1. 先运行检查

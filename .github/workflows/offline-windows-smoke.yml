@@ -83,11 +83,20 @@ jobs:
         shell: pwsh
         run: |
           Set-Location $env:PRIVACYGUARD_APP_ROOT
-          .\Start-PrivacyGuard.ps1
+          foreach ($entry in @("Install-PrivacyGuard.cmd","Launch-PrivacyGuard.cmd","Check-PrivacyGuard.cmd","Stop-PrivacyGuard.cmd","Test-PrivacyGuard.ps1")) {
+            if (-not (Test-Path $entry)) { throw "Missing one-click entry: $entry" }
+          }
+          $blocker = Start-Process -PassThru -WindowStyle Hidden -FilePath "python" -ArgumentList @("-m","http.server","8000","--bind","127.0.0.1")
+          New-Item -ItemType Directory -Force -Path .\.run | Out-Null
+          $blocker.Id | Set-Content .\.run\test-blocker.pid
+          Start-Sleep -Seconds 2
+          .\Start-PrivacyGuard.ps1 -NoBrowser
+          $runtime = Get-Content .\.run\runtime.json -Raw | ConvertFrom-Json
+          if ($runtime.backend_port -eq 8000) { throw "Port fallback was not used while 8000 was occupied." }
           $health = $null
           for ($attempt = 1; $attempt -le 60; $attempt++) {
             try {
-              $health = Invoke-RestMethod -Uri "http://127.0.0.1:8000/health/services" -TimeoutSec 10
+              $health = Invoke-RestMethod -Uri $runtime.services_url -TimeoutSec 10
               if ($health.services.has_ner.detail.reachable -and $health.services.paddle_ocr.detail.reachable -and $health.services.paddle_ocr.detail.ready) { break }
             } catch {
               Write-Host "Waiting for services ($attempt/60): $($_.Exception.Message)"
@@ -98,7 +107,8 @@ jobs:
           $health | ConvertTo-Json -Depth 10 | Tee-Object -FilePath (Join-Path $env:PRIVACYGUARD_APP_ROOT "logs\health-services.json")
           if (-not $health.services.has_ner.detail.reachable) { throw "HaS service is not reachable." }
           if (-not $health.services.paddle_ocr.detail.reachable -or -not $health.services.paddle_ocr.detail.ready) { throw "OCR service is not ready." }
-          Invoke-RestMethod -Uri "http://127.0.0.1:8000/health" -TimeoutSec 10 | ConvertTo-Json -Depth 5
+          .\Test-PrivacyGuard.ps1
+          Invoke-RestMethod -Uri $runtime.health_url -TimeoutSec 10 | ConvertTo-Json -Depth 5
 
       - name: Stop services
         if: always()
@@ -108,6 +118,8 @@ jobs:
             Set-Location $env:PRIVACYGUARD_APP_ROOT
             .\Stop-PrivacyGuard.ps1
           }
+          $blockerFile = Join-Path $env:PRIVACYGUARD_APP_ROOT ".run\test-blocker.pid"
+          if (Test-Path $blockerFile) { Stop-Process -Id ([int](Get-Content $blockerFile -Raw)) -Force -ErrorAction SilentlyContinue }
 
       - name: Collect test logs
         if: always()
@@ -127,4 +139,3 @@ jobs:
           path: ${{ runner.temp }}\privacyguard-smoke-logs
           if-no-files-found: warn
           retention-days: 7
-

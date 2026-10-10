@@ -6,9 +6,9 @@
 
 通用要求：
 
-- 下载量约 1.8 GB；至少 10 GB 可用磁盘，建议 15 GB 以上；
+- macOS 下载约 1.65 GiB，Windows 约 1.61 GiB；至少 10 GB 可用磁盘，建议 15 GB 以上；
 - 至少 8 GB 内存，建议 16 GB；
-- 端口 `8000/8080/8082` 未被不相关程序占用；
+- 默认端口为 `8000/8080/8082`；占用时启动器可自动改用 18000/28000/38000 系列备用端口；
 - 能运行系统自带的 SHA-256、tar/解压和 HTTPS 下载工具；
 - 安装前运行对应的只读检查脚本：`scripts/check-offline-macos.sh` 或 `scripts/check-offline-windows.ps1`。
 
@@ -18,6 +18,7 @@ macOS 离线包：
 - Apple Silicon arm64（M1/M2/M3/M4 及后续），不支持 Intel Mac；
 - Python 3.11 缺失时，使用运行包内 `prerequisites/python-3.11.9-macos11.pkg`；
 - OCR 使用 CPU，HaS 使用 llama.cpp/Metal。
+- 包内约 166 个 Python wheels。
 
 Windows 离线包：
 
@@ -25,6 +26,9 @@ Windows 离线包：
 - PowerShell 5.1+ 和系统 `tar.exe`；
 - Python 3.11 缺失时，安装脚本可使用包内 `prerequisites\python-3.11.9-amd64.exe`；
 - 需要 Microsoft Visual C++ 2015–2022 x64 Runtime。若检查不到，只能从微软官方下载：https://aka.ms/vs/17/release/vc_redist.x64.exe 。
+- 包内约 164 个 Python wheels。
+
+当前没有 Linux standard 离线包。Linux 用户不能直接使用 Windows/macOS runtime，应等待独立发行包或按源码部署指南安装。
 
 ## 源码安装 / full 视觉版
 

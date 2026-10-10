@@ -57,22 +57,21 @@ Get-FileHash .\PrivacyGuard-standard-*-v0.1.0* -Algorithm SHA256
 
 ## macOS Apple Silicon
 
-解压运行包，把两个模型包放在解压目录的上一级，然后执行：
+解压运行包，把两个模型包放在解压目录的上一级，然后双击：
 
-```bash
-./install-offline-macos.sh
-./scripts/start-macos.sh
-```
+1. `Install-PrivacyGuard.command`
+2. `Launch-PrivacyGuard.command`
+
+检测使用 `Test-PrivacyGuard.command`，停止使用 `Stop-PrivacyGuard.command`。
 
 ## Windows x64
 
-解压运行包，把两个模型包放在解压目录的上一级，在 PowerShell 中执行：
+解压运行包，把两个模型包放在解压目录的上一级，然后双击：
 
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\Install-Offline-Windows.ps1 -InstallPython
-.\Start-PrivacyGuard.ps1
-```
+1. `Install-PrivacyGuard.cmd`
+2. `Launch-PrivacyGuard.cmd`
+
+检测使用 `Check-PrivacyGuard.cmd`，停止使用 `Stop-PrivacyGuard.cmd`。
 
 Windows standard 离线包使用 CPU 兼容运行方式，不依赖 WSL 或 NVIDIA GPU。v0.1.0 已在 GitHub 托管的 Windows Server 2025 x64 环境完成端到端验收：离线安装、模型解压、HaS、PaddleOCR、后端健康检查、停止和日志收集均通过。测试记录：[GitHub Actions 38041971610](https://github.com/bseazh/PrivacyGuard/actions/runs/38041971610)。
 

@@ -40,6 +40,7 @@ powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile sta
 - [Agent 安装向导](./agent-guide.md)
 - [可直接复制给 Agent 的安装任务书](./copy-paste-agent-prompt.md)
 - [FAQ](./faq.md)
+- [安装与验收测试方案](./acceptance-test.md)
 
 如选择 standard 离线安装，可直接进入[国内下载页选择 macOS 或 Windows](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/)。国内镜像不可用时使用 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)。
 
@@ -54,5 +55,7 @@ powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile sta
 5. 导出 PDF 中原敏感文字无法再搜索；
 6. standard/full 档位能处理至少一份扫描 PDF；
 7. 日志中没有关键模型静默回退或持续崩溃。
+
+安装后无需输入命令：Windows 双击 `Launch-PrivacyGuard.cmd`，macOS 双击 `Launch-PrivacyGuard.command`。检测与停止也有同目录双击入口。默认端口被其他软件占用时，启动器会选择备用端口并自动打开实际地址，不会结束未知进程。
 
 > 本项目采用 Personal Use License。公司、律所、学校、政府、团队及生产用途可能需要商业许可；LocateAnything 权重为非商用许可，PyMuPDF 还涉及 AGPL/商业双许可。
