@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-VERSION="${OFFLINE_VERSION:-v0.1.1}"
+VERSION="${OFFLINE_VERSION:-v0.1.2}"
 OUT_DIR="${OFFLINE_OUTPUT_DIR:-$ROOT_DIR/dist/offline/$VERSION}"
 WORK_DIR="$(mktemp -d /private/tmp/privacyguard-offline.XXXXXX)"
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3.11)}"
@@ -11,6 +11,25 @@ LLAMA_TAG="${LLAMA_CPP_TAG:-b11540}"
 
 cleanup() { rm -rf "$WORK_DIR"; }
 trap cleanup EXIT
+
+RELEASE_TAG="offline-standard-$VERSION"
+if [[ -d "$OUT_DIR" && -n "$(find "$OUT_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+  print -u2 "拒绝覆盖已有不可变版本目录：$OUT_DIR"
+  print -u2 "请通过 OFFLINE_VERSION 指定一个尚未使用的新版本。"
+  exit 2
+fi
+if git -C "$ROOT_DIR" rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+  print -u2 "拒绝重建已有 Git tag：$RELEASE_TAG"
+  exit 2
+fi
+if git -C "$ROOT_DIR" ls-remote --exit-code privacyguard "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+  print -u2 "拒绝重建远端已有 Git tag：$RELEASE_TAG"
+  exit 2
+fi
+if command -v gh >/dev/null 2>&1 && gh release view "$RELEASE_TAG" --repo bseazh/PrivacyGuard >/dev/null 2>&1; then
+  print -u2 "拒绝重建已有 GitHub Release：$RELEASE_TAG"
+  exit 2
+fi
 mkdir -p "$OUT_DIR"
 
 HAS_NAME="PrivacyGuard-standard-model-has-$VERSION.tar.gz"

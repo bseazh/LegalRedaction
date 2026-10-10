@@ -47,7 +47,7 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 把下面整段话复制到支持终端操作的 Agent 中，它会先检查并询问你，得到确认后再下载和安装：
 
 ```text
-请帮我安装 PrivacyGuard standard v0.1.1 离线版。请先读取并严格执行安装任务书：国内地址 https://privacyguard.snorlaxden.fun/offline-standard-v0.1.1/agent-install.md；如果国内地址不可用，则读取 GitHub 地址 https://raw.githubusercontent.com/bseazh/PrivacyGuard/datainfra-runtime/docs/installation/copy-paste-agent-prompt.md。先只读检查系统、架构、磁盘、端口和许可证用途，告诉我预计下载量、时间、安装路径并等待我确认。macOS 默认安装到 ~/Documents/PrivacyGuard/v0.1.1，Windows 默认安装到 D:\PrivacyGuard\v0.1.1；Windows 没有 D 盘时先询问再改用 Documents。优先国内下载源，失败自动切换 GitHub，支持断点续传并强制校验 SHA-256。一直执行到应用、后端、HaS 和 OCR 通过健康检查；失败时保留已有下载和日志，不要从头重装。
+请帮我安装 PrivacyGuard standard v0.1.2 离线版。请先读取并严格执行安装任务书：国内地址 https://privacyguard.snorlaxden.fun/offline-standard-v0.1.2/agent-install.md；如果国内地址不可用，则读取 GitHub 地址 https://raw.githubusercontent.com/bseazh/PrivacyGuard/datainfra-runtime/docs/installation/copy-paste-agent-prompt.md。先只读检查系统、架构、磁盘、端口和许可证用途，告诉我预计下载量、时间、安装路径并等待我确认。macOS 默认安装到 ~/Documents/PrivacyGuard/v0.1.2，Windows 默认安装到 D:\PrivacyGuard\v0.1.2；Windows 没有 D 盘时先询问再改用 Documents。优先国内下载源，失败自动切换 GitHub，支持断点续传并强制校验 SHA-256。一直执行到应用、后端、HaS 和 OCR 通过健康检查；失败时保留已有下载和日志，不要从头重装。
 ```
 
 完整内容及目录结构：[复制给 Agent 的一键安装指令](./docs/installation/copy-paste-agent-prompt.md)。
@@ -61,7 +61,7 @@ standard 离线包已包含前端、Python 3.11 安装器、Python wheels、llam
 - [让 Agent 引导安装](./docs/installation/agent-guide.md)
 - [常见问题](./docs/installation/faq.md)
 
-standard 离线包下载：进入[国内下载页选择 macOS 或 Windows](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.1/)，也可使用 [GitHub Release v0.1.1](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.1)。SHA-256 校验方法见 [离线包指南](./docs/installation/offline-standard.md)。
+standard 离线包下载：进入[国内下载页选择 macOS 或 Windows](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.2/)，也可使用 [GitHub Release v0.1.2](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.2)。SHA-256 校验方法见 [离线包指南](./docs/installation/offline-standard.md)。
 
 先运行只读环境检查（不会安装软件或下载模型）：
 

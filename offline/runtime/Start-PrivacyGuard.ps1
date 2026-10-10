@@ -49,6 +49,12 @@ function Save-ProcessRecord([string]$Name, $Process, [string]$ExpectedExecutable
 # Restart only processes previously launched by this package. Never terminate an unrelated port owner.
 $StopScript = Join-Path $Root "Stop-PrivacyGuard.ps1"
 if (Test-Path $StopScript) { & $StopScript -Quiet }
+$StaleRecords = @(Get-ChildItem $Run -Filter "*.process.json" -ErrorAction SilentlyContinue | Where-Object {
+    try { (Get-Content $_.FullName -Raw | ConvertFrom-Json).status -eq "stale" } catch { $false }
+})
+if ($StaleRecords.Count -gt 0) {
+    throw "检测到未解决的 stale 进程记录：$($StaleRecords.Name -join ', ')。为避免启动重复服务，请先查看警告并确认对应进程。"
+}
 
 $BackendPort = Select-Port @(8000,18000,28000,38000) "应用"
 $HasPort = Select-Port @(8080,18080,28080,38080) "HaS"

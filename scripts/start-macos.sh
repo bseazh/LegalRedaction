@@ -113,14 +113,14 @@ print "OCR：Paddle CPU 兼容模式"
 print "HaS：llama.cpp / Metal（不可用时由 llama.cpp 自身回退）"
 print "视觉模型：$([[ "$START_VISUAL" == "true" ]] && print "$LOCATE_DEVICE / $LOCATE_DTYPE" || print disabled)"
 
-submit_job com.bigapple.redaction.has /tmp/redaction-has-mac.log /tmp/redaction-has-mac.err \
+submit_job com.bigapple.redaction.has "$LOG_DIR/has.log" "$LOG_DIR/has.err.log" \
   /usr/bin/env \
   "HAS_MODEL_PATH=$BACKEND_DIR/models/has/has_4.0_0.6B.gguf" \
   HAS_TEXT_HOST=127.0.0.1 "HAS_TEXT_PORT=$HAS_PORT" HAS_TEXT_N_CTX=4096 \
   "HAS_TEXT_N_GPU_LAYERS=${HAS_TEXT_N_GPU_LAYERS:--1}" \
   "$APP_PYTHON" "$BACKEND_DIR/scripts/start_has_python.py"
 
-submit_job com.bigapple.redaction.ocr /tmp/redaction-ocr-mac.log /tmp/redaction-ocr-mac.err \
+submit_job com.bigapple.redaction.ocr "$LOG_DIR/ocr.log" "$LOG_DIR/ocr.err.log" \
   /usr/bin/env \
   "OCR_DEVICE=${OCR_DEVICE:-cpu}" OCR_VL_ENABLED=0 OCR_STRUCTURE_ENABLED=1 OCR_STRUCTURE_WARMUP=0 \
   "PADDLE_PDX_CACHE_HOME=${PADDLE_PDX_CACHE_HOME:-$BACKEND_DIR/models/paddlex-cache}" \
@@ -128,7 +128,7 @@ submit_job com.bigapple.redaction.ocr /tmp/redaction-ocr-mac.log /tmp/redaction-
   "$OCR_PYTHON" "$BACKEND_DIR/scripts/ocr_server.py"
 
 if [[ "$START_VISUAL" == "true" ]]; then
-  submit_job com.bigapple.redaction.locate /tmp/redaction-locate-mac.log /tmp/redaction-locate-mac.err \
+  submit_job com.bigapple.redaction.locate "$LOG_DIR/locate.log" "$LOG_DIR/locate.err.log" \
     /usr/bin/env \
     PYTORCH_ENABLE_MPS_FALLBACK=1 "LOCATE_ANYTHING_DEVICE=$LOCATE_DEVICE" \
     "LOCATE_ANYTHING_MODEL=$LOCATE_MODEL" LOCATE_ANYTHING_BACKEND=hf \
@@ -141,7 +141,7 @@ else
   remove_job com.bigapple.redaction.locate
 fi
 
-submit_job com.bigapple.redaction.app /tmp/redaction-app-mac.log /tmp/redaction-app-mac.err \
+submit_job com.bigapple.redaction.app "$LOG_DIR/app.log" "$LOG_DIR/app.err.log" \
   /usr/bin/env \
   AUTH_ENABLED=false DEBUG=false \
   "DATA_DIR=$BACKEND_DIR/data" "UPLOAD_DIR=$BACKEND_DIR/uploads" "OUTPUT_DIR=$BACKEND_DIR/outputs" \
@@ -165,7 +165,7 @@ EOF
 print "服务已提交，正在等待后端和模型服务（首次启动可能需要数分钟）..."
 deadline=$((SECONDS + 300))
 until curl -fsS --max-time 10 "http://127.0.0.1:$APP_PORT/health" >/dev/null 2>&1; do
-  (( SECONDS < deadline )) || { print -u2 "后端启动超时，请运行 ./Test-PrivacyGuard.command；日志位于 /tmp/redaction-*-mac.*"; exit 1; }
+  (( SECONDS < deadline )) || { print -u2 "后端启动超时，请运行 ./Test-PrivacyGuard.command；日志位于 $LOG_DIR"; exit 1; }
   sleep 2
 done
 

@@ -13,6 +13,24 @@ if (( preflight_status != 0 )); then
   exit $preflight_status
 fi
 print "[2/2] 预检通过，开始离线安装。"
+python_ready() {
+  [[ -x /Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11 ]] || \
+    [[ -x /opt/homebrew/bin/python3.11 ]] || command -v python3.11 >/dev/null 2>&1
+}
+if ! python_ready; then
+  python_installer="$PWD/prerequisites/python-3.11.9-macos11.pkg"
+  if [[ ! -f "$python_installer" ]]; then
+    print -u2 "缺少包内 Python 3.11 安装器：$python_installer"
+    exit 1
+  fi
+  print "未检测到 Python 3.11，正在打开包内官方安装器。请按安装器提示完成授权。"
+  /usr/bin/open -W "$python_installer"
+  if ! python_ready; then
+    print -u2 "Python 3.11 仍未安装，已停止后续步骤。完成安装后可重新双击本文件。"
+    exit 1
+  fi
+  print "Python 3.11 安装完成，继续离线安装。"
+fi
 ./install-offline-macos.sh
 status=$?
 if (( status == 0 )); then

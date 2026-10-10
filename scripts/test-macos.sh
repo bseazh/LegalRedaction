@@ -14,7 +14,7 @@ health_json="$(curl -fsS --max-time 30 "$HEALTH_URL" 2>/dev/null || true)"
 services_json="$(curl -fsS --max-time 30 "$SERVICES_URL" 2>/dev/null || true)"
 if [[ -z "$health_json" || -z "$services_json" ]]; then
   print -u2 "检测失败：后端或服务状态接口无法访问。"
-  print -u2 "日志：/tmp/redaction-*-mac.log 和 /tmp/redaction-*-mac.err"
+  print -u2 "日志：$ROOT_DIR/logs"
   exit 2
 fi
 

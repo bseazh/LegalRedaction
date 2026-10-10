@@ -12,15 +12,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Offline-Wi
 if errorlevel 1 goto failed
 echo.
 echo 安装成功。现在可以双击 Launch-PrivacyGuard.cmd 启动。
-pause
+if not defined PRIVACYGUARD_NONINTERACTIVE pause
 exit /b 0
 :preflight_failed
 echo.
 echo 安装前检查未通过，已停止安装。请根据上方 FAIL 项处理，FAQ 位于 docs\installation\faq.md。
-pause
+if not defined PRIVACYGUARD_NONINTERACTIVE pause
 exit /b 2
 :failed
 echo.
 echo 安装失败。请保留本窗口内容和 logs 文件夹，再交给安装 Agent 排查。
-pause
+if not defined PRIVACYGUARD_NONINTERACTIVE pause
 exit /b 1
