@@ -26,6 +26,10 @@
 
 这是预期配置。PaddleOCR 在当前 Mac 方案中使用 CPU；HaS 使用 llama.cpp/Metal，LocateAnything 可尝试 MPS。
 
+## 离线包是否经过真实环境测试？
+
+是。macOS v0.1.0 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成离线启动验证。Windows v0.1.0 已在 GitHub 托管的 Windows Server 2025 x64 完成完整测试，包括下载、SHA-256、完全离线安装、模型解压、HaS、PaddleOCR、后端健康检查、停止和日志收集；测试记录为 [GitHub Actions 38041971610](https://github.com/bseazh/PrivacyGuard/actions/runs/38041971610)。不同用户电脑仍应先运行预检脚本，以排除磁盘、端口和 Visual C++ Runtime 等本机差异。
+
 ## 为什么不提供一个脚本把所有模型全部下载？
 
 模型体积、许可证和硬件要求不同。向所有用户默认下载 full 模型会浪费空间，也可能违反使用目的对应的模型许可。向导会先问能力和授权，再下载必要部分。

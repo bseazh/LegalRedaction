@@ -74,7 +74,9 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\Start-PrivacyGuard.ps1
 ```
 
-Windows standard 离线包使用 CPU 兼容运行方式，不依赖 WSL 或 NVIDIA GPU。它需要在 Windows x64 实机完成最终验收；在 macOS 上只能完成文件与依赖的交叉构建检查。
+Windows standard 离线包使用 CPU 兼容运行方式，不依赖 WSL 或 NVIDIA GPU。v0.1.0 已在 GitHub 托管的 Windows Server 2025 x64 环境完成端到端验收：离线安装、模型解压、HaS、PaddleOCR、后端健康检查、停止和日志收集均通过。测试记录：[GitHub Actions 38041971610](https://github.com/bseazh/PrivacyGuard/actions/runs/38041971610)。
+
+macOS v0.1.0 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成纯离线启动验证，后端、HaS、OCR 均可访问；OCR 使用“Mac CPU 兼容模式”。
 
 ## 构建
 

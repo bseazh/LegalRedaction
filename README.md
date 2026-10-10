@@ -63,6 +63,8 @@ The standard offline package already includes the built frontend, Python 3.11 in
 
 Standard offline packages: choose [macOS or Windows on the China mirror](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/), or use [GitHub Release v0.1.0](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0). See the [offline package guide](./docs/installation/offline-standard.md) for SHA-256 verification.
 
+The v0.1.0 packages have been tested end to end on macOS 14.8.1 Apple Silicon and GitHub-hosted Windows Server 2025 x64: offline dependency installation, model extraction, backend startup, HaS, PaddleOCR readiness, health checks, shutdown, and log collection all completed successfully. Windows validation run: [38041971610](https://github.com/bseazh/PrivacyGuard/actions/runs/38041971610).
+
 ```bash
 ./scripts/doctor-macos.sh standard
 ```
