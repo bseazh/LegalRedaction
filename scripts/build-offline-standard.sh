@@ -6,10 +6,15 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 VERSION="${OFFLINE_VERSION:-v0.1.2}"
 OUT_DIR="${OFFLINE_OUTPUT_DIR:-$ROOT_DIR/dist/offline/$VERSION}"
 WORK_DIR="$(mktemp -d /private/tmp/privacyguard-offline.XXXXXX)"
+CACHE_DIR="${OFFLINE_CACHE_DIR:-$ROOT_DIR/dist/offline/.cache}"
+BUILD_DIR=""
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3.11)}"
 LLAMA_TAG="${LLAMA_CPP_TAG:-b11540}"
 
-cleanup() { rm -rf "$WORK_DIR"; }
+cleanup() {
+  rm -rf "$WORK_DIR"
+  [[ -z "$BUILD_DIR" ]] || rm -rf "$BUILD_DIR"
+}
 trap cleanup EXIT
 
 RELEASE_TAG="offline-standard-$VERSION"
@@ -30,7 +35,20 @@ if command -v gh >/dev/null 2>&1 && gh release view "$RELEASE_TAG" --repo bseazh
   print -u2 "拒绝重建已有 GitHub Release：$RELEASE_TAG"
   exit 2
 fi
-mkdir -p "$OUT_DIR"
+mkdir -p "$(dirname "$OUT_DIR")" "$CACHE_DIR"
+BUILD_DIR="$(mktemp -d "$(dirname "$OUT_DIR")/.${VERSION}.build.XXXXXX")"
+
+download_file() {
+  local url="$1"
+  local destination="$2"
+  local cached="$CACHE_DIR/$(basename "$destination")"
+  local partial="$cached.part"
+  if [[ ! -f "$cached" ]]; then
+    curl -fL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 20 -C - -o "$partial" "$url"
+    mv "$partial" "$cached"
+  fi
+  cp "$cached" "$destination"
+}
 
 HAS_NAME="PrivacyGuard-standard-model-has-$VERSION.tar.gz"
 OCR_NAME="PrivacyGuard-standard-model-paddleocr-$VERSION.tar.gz"
@@ -42,17 +60,17 @@ WIN_NAME="PrivacyGuard-standard-windows-x64-runtime-$VERSION.zip"
 [[ -d "$ROOT_DIR/frontend/dist" ]] || { print -u2 "缺少 frontend/dist，请先构建前端"; exit 1; }
 
 print "[1/6] 构建共享模型包"
-if [[ ! -f "$OUT_DIR/$HAS_NAME" ]]; then
+if [[ ! -f "$BUILD_DIR/$HAS_NAME" ]]; then
   mkdir -p "$WORK_DIR/has/backend/models/has"
   cp "$ROOT_DIR/backend/models/has/has_4.0_0.6B.gguf" "$WORK_DIR/has/backend/models/has/"
   cp "$ROOT_DIR/offline/THIRD_PARTY_MODELS.md" "$WORK_DIR/has/"
-  tar -czf "$OUT_DIR/$HAS_NAME" -C "$WORK_DIR/has" .
+  tar -czf "$BUILD_DIR/$HAS_NAME" -C "$WORK_DIR/has" .
 fi
-if [[ ! -f "$OUT_DIR/$OCR_NAME" ]]; then
+if [[ ! -f "$BUILD_DIR/$OCR_NAME" ]]; then
   mkdir -p "$WORK_DIR/ocr/backend/models/paddlex-cache"
   cp -R "$HOME/.paddlex/official_models" "$WORK_DIR/ocr/backend/models/paddlex-cache/"
   cp "$ROOT_DIR/offline/THIRD_PARTY_MODELS.md" "$WORK_DIR/ocr/"
-  tar -czf "$OUT_DIR/$OCR_NAME" -C "$WORK_DIR/ocr" .
+  tar -czf "$BUILD_DIR/$OCR_NAME" -C "$WORK_DIR/ocr" .
 fi
 
 print "[2/6] 下载 macOS 离线 wheel"
@@ -72,9 +90,9 @@ COMMON_WIN=(--only-binary=:all: --platform win_amd64 --python-version 311 --impl
 
 print "[4/6] 下载官方 Python 与 llama.cpp 运行时"
 mkdir -p "$WORK_DIR/mac/prerequisites" "$WORK_DIR/win/prerequisites" "$WORK_DIR/win/runtime/llama"
-curl -fL --retry 3 -o "$WORK_DIR/mac/prerequisites/python-3.11.9-macos11.pkg" https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg
-curl -fL --retry 3 -o "$WORK_DIR/win/prerequisites/python-3.11.9-amd64.exe" https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
-gh release download "$LLAMA_TAG" --repo ggml-org/llama.cpp --pattern "llama-$LLAMA_TAG-bin-win-cpu-x64.zip" --dir "$WORK_DIR"
+download_file https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg "$WORK_DIR/mac/prerequisites/python-3.11.9-macos11.pkg"
+download_file https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe "$WORK_DIR/win/prerequisites/python-3.11.9-amd64.exe"
+download_file "https://github.com/ggml-org/llama.cpp/releases/download/$LLAMA_TAG/llama-$LLAMA_TAG-bin-win-cpu-x64.zip" "$WORK_DIR/llama-$LLAMA_TAG-bin-win-cpu-x64.zip"
 ditto -xk "$WORK_DIR/llama-$LLAMA_TAG-bin-win-cpu-x64.zip" "$WORK_DIR/win/runtime/llama"
 
 copy_application() {
@@ -105,13 +123,15 @@ cp "$ROOT_DIR/scripts/check-offline-windows.ps1" "$WORK_DIR/win/Check-Offline-Wi
 cp "$ROOT_DIR/offline/runtime/OFFLINE-README.md" "$WORK_DIR/win/README-OFFLINE.md"
 chmod +x "$WORK_DIR/mac/check-offline-macos.sh" "$WORK_DIR/mac/install-offline-macos.sh" "$WORK_DIR/mac/"*.command "$WORK_DIR/mac/scripts/"*.sh
 
-(cd "$OUT_DIR" && shasum -a 256 "$HAS_NAME" "$OCR_NAME") > "$WORK_DIR/components.sha256"
+(cd "$BUILD_DIR" && shasum -a 256 "$HAS_NAME" "$OCR_NAME") > "$WORK_DIR/components.sha256"
 cp "$WORK_DIR/components.sha256" "$WORK_DIR/mac/COMPONENTS.sha256"
 cp "$WORK_DIR/components.sha256" "$WORK_DIR/win/COMPONENTS.sha256"
-tar -czf "$OUT_DIR/$MAC_NAME" -C "$WORK_DIR/mac" .
-(cd "$WORK_DIR/win" && zip -qry "$OUT_DIR/$WIN_NAME" .)
+tar -czf "$BUILD_DIR/$MAC_NAME" -C "$WORK_DIR/mac" .
+(cd "$WORK_DIR/win" && zip -qry "$BUILD_DIR/$WIN_NAME" .)
 
 print "[6/6] 生成发行校验文件"
-(cd "$OUT_DIR" && shasum -a 256 "$HAS_NAME" "$OCR_NAME" "$MAC_NAME" "$WIN_NAME") > "$OUT_DIR/SHA256SUMS"
+(cd "$BUILD_DIR" && shasum -a 256 "$HAS_NAME" "$OCR_NAME" "$MAC_NAME" "$WIN_NAME") > "$BUILD_DIR/SHA256SUMS"
+mv "$BUILD_DIR" "$OUT_DIR"
+BUILD_DIR=""
 du -sh "$OUT_DIR"/*
 print "离线包目录：$OUT_DIR"
