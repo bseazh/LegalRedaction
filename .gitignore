@@ -132,3 +132,6 @@ AUDIT_2026-07-12_findings.json
 */.bak/
 *.bak-/
 deploy/offline/
+
+# Installation doctor reports
+.install-report/

@@ -38,6 +38,30 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 
 ---
 
+## 第一次安装
+
+如果你不确定该安装哪些模型、当前电脑是否满足要求，**不要直接运行启动命令**。先进入新手安装向导：
+
+- [安装入口与版本选择](./docs/installation/README.md)
+- [macOS 安装](./docs/installation/macos.md)
+- [Windows 安装](./docs/installation/windows.md)
+- [让 Agent 引导安装](./docs/installation/agent-guide.md)
+- [常见问题](./docs/installation/faq.md)
+
+先运行只读环境检查（不会安装软件或下载模型）：
+
+```bash
+# macOS：basic / standard / full 三选一
+./scripts/doctor-macos.sh standard
+```
+
+```powershell
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile standard
+```
+
+检查完成后再按报告选择基础版、标准版或完整视觉版。公司、律所、机构或生产环境使用前，请先阅读 [LICENSE](./LICENSE) 和第三方模型许可。
+
 ## 概览
 
 **RedactionEverything** 是一套面向本地部署的文档匿名化系统。它把非结构化文件拆分为文本链路与视觉链路，识别姓名、机构、证件号、账户、地址、金额、日期、印章、人脸、签字等敏感要素，并提供复核界面、批量任务管理以及可导出的脱敏结果。

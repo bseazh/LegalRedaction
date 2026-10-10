@@ -38,6 +38,26 @@ RedactionEverything is a local-first redaction workbench for sensitive informati
 
 ---
 
+## First-time installation
+
+Do not start by downloading every model. First choose an installation profile and run the read-only environment doctor:
+
+- [Installation entry](./docs/installation/README.md)
+- [macOS guide](./docs/installation/macos.md)
+- [Windows guide](./docs/installation/windows.md)
+- [Agent-guided installation](./docs/installation/agent-guide.md)
+- [Installation FAQ](./docs/installation/faq.md)
+
+```bash
+./scripts/doctor-macos.sh standard
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile standard
+```
+
+The doctor does not install packages or download models. Organizational or production use must clear the project and third-party licenses before installation.
+
 ## Overview
 
 **RedactionEverything** is a document anonymization system designed for local deployment. It splits unstructured files into a text path and a visual path, detects names, organizations, IDs, accounts, addresses, amounts, dates, seals, faces, signatures, and other sensitive elements, then provides a review interface, batch task management, and exportable redacted outputs.
