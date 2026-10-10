@@ -95,7 +95,7 @@ Windows 和 macOS 的安装过程都会保存在 `app/logs/install.log`。运行
 
 ## 离线包是否经过真实环境测试？
 
-是。macOS v0.1.1 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成离线安装、启动和 8000 端口冲突切换验证。Windows v0.1.1 已在 GitHub 托管的 Windows Server 2025 x64 完成下载、SHA-256、完全离线安装、模型解压、端口冲突切换、HaS、PaddleOCR、后端健康检查、停止和日志收集；测试记录为 [GitHub Actions 38044040155](https://github.com/bseazh/PrivacyGuard/actions/runs/38044040155)。不同用户电脑仍应先运行预检脚本，以排除磁盘和 Visual C++ Runtime 等本机差异。
+是。macOS v0.1.1 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成离线安装、启动和 8000 端口冲突切换验证。Windows v0.1.1 已在 GitHub 托管的 Windows Server 2025 x64 完成下载、SHA-256、完全离线安装、模型解压、端口冲突切换、HaS、PaddleOCR、后端健康检查、停止和日志收集；测试记录为 [GitHub Actions 38053036742](https://github.com/bseazh/PrivacyGuard/actions/runs/38053036742)。不同用户电脑仍应先运行预检脚本，以排除磁盘和 Visual C++ Runtime 等本机差异。
 
 ## 为什么不提供一个脚本把所有模型全部下载？
 

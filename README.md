@@ -64,7 +64,7 @@ The standard offline package already includes the built frontend, Python 3.11 in
 
 Standard offline packages: choose [macOS or Windows on the China mirror](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.1/), or use [GitHub Release v0.1.1](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.1). See the [offline package guide](./docs/installation/offline-standard.md) for SHA-256 verification.
 
-The v0.1.1 packages have been tested end to end on macOS 14.8.1 Apple Silicon and GitHub-hosted Windows Server 2025 x64: offline dependency installation, model extraction, safe port fallback, backend startup, HaS, PaddleOCR readiness, health checks, shutdown, and log collection all completed successfully. Windows validation run: [38044040155](https://github.com/bseazh/PrivacyGuard/actions/runs/38044040155).
+The v0.1.1 packages have been tested end to end on macOS 14.8.1 Apple Silicon and GitHub-hosted Windows Server 2025 x64: offline dependency installation, model extraction, safe port fallback, backend startup, HaS, PaddleOCR readiness, health checks, shutdown, and log collection all completed successfully. Windows validation run: [38053036742](https://github.com/bseazh/PrivacyGuard/actions/runs/38053036742).
 
 After extraction, non-technical users can use the launchers in the app folder: `Install-PrivacyGuard.cmd` / `Launch-PrivacyGuard.cmd` / `Check-PrivacyGuard.cmd` on Windows, or the matching `.command` files on macOS. The launcher safely selects fallback localhost ports when defaults are occupied and writes the actual URL plus a health report under `.run` and `logs`.
 

@@ -73,7 +73,7 @@ Get-FileHash .\PrivacyGuard-standard-*-v0.1.1* -Algorithm SHA256
 
 检测使用 `Check-PrivacyGuard.cmd`，停止使用 `Stop-PrivacyGuard.cmd`。
 
-Windows standard 离线包使用 CPU 兼容运行方式，不依赖 WSL 或 NVIDIA GPU。v0.1.1 已在 GitHub 托管的 Windows Server 2025 x64 环境完成端到端验收：离线安装、模型解压、端口冲突自动切换、HaS、PaddleOCR、后端健康检查、停止和日志收集均通过。测试记录：[GitHub Actions 38044040155](https://github.com/bseazh/PrivacyGuard/actions/runs/38044040155)。
+Windows standard 离线包使用 CPU 兼容运行方式，不依赖 WSL 或 NVIDIA GPU。v0.1.1 已在 GitHub 托管的 Windows Server 2025 x64 环境完成端到端验收：离线安装、模型解压、端口冲突自动切换、HaS、PaddleOCR、后端健康检查、停止和日志收集均通过。测试记录：[GitHub Actions 38053036742](https://github.com/bseazh/PrivacyGuard/actions/runs/38053036742)。
 
 macOS v0.1.1 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成纯离线启动验证，后端、HaS、OCR 均可访问；OCR 使用“Mac CPU 兼容模式”。
 
