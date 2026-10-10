@@ -15,12 +15,20 @@
 
 若用户选择机构生产、付费交付或商业集成，先展示许可证风险并请求用户确认已取得所需授权。不得自行替用户判断授权有效。
 
+## standard 离线包下载源选择
+
+1. 先探测国内镜像 `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/`；
+2. 若域名未解析、TLS 尚未就绪、连接超时或返回非 2xx，则改用 GitHub Release：`https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0`；
+3. macOS 下载 macOS runtime、HaS、PaddleOCR 和 `SHA256SUMS`；Windows 下载 Windows runtime、HaS、PaddleOCR 和 `SHA256SUMS`；
+4. 支持断点续传，但不得通过关闭 TLS 校验解决网络问题；
+5. 下载完成后必须校验 SHA-256，失败的文件应删除并重新下载。
+
 ## 执行流程
 
 1. 读取本文件、[requirements.md](./requirements.md) 和对应系统指南；
 2. 运行 `doctor-macos.sh` 或 `doctor-windows.ps1`；
 3. 根据答案推荐 `basic/standard/full`，说明缺失能力；
-4. 安装前再次列出预计下载量、磁盘占用和系统修改；
+4. 安装前再次列出预计下载量（standard 约 1.7 GB）、建议预留磁盘（至少 8 GB）和系统修改；
 5. 创建隔离虚拟环境，不污染系统 Python；
 6. 下载模型时记录来源和校验值；
 7. 启动后检查 `/health` 和 `/health/services`；

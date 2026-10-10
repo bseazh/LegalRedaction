@@ -49,6 +49,8 @@ Do not start by downloading every model. First choose an installation profile an
 - [Agent-guided installation](./docs/installation/agent-guide.md)
 - [Installation FAQ](./docs/installation/faq.md)
 
+Standard offline packages: [GitHub Release v0.1.0](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0). A China mirror is prepared at `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/` and becomes available after its DNS record is enabled. See the [offline package guide](./docs/installation/offline-standard.md) for the exact files required by each platform and SHA-256 verification.
+
 ```bash
 ./scripts/doctor-macos.sh standard
 ```

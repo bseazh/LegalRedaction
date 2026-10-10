@@ -49,6 +49,8 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 - [让 Agent 引导安装](./docs/installation/agent-guide.md)
 - [常见问题](./docs/installation/faq.md)
 
+standard 离线包下载：[GitHub Release v0.1.0](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)。国内镜像已配置为 `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/`，待二级域名 DNS 生效后即可使用。每个平台需要下载的准确文件及 SHA-256 校验方法见 [离线包指南](./docs/installation/offline-standard.md)。
+
 先运行只读环境检查（不会安装软件或下载模型）：
 
 ```bash
