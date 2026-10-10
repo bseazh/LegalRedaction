@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-VERSION="${OFFLINE_VERSION:-v0.1.0}"
+VERSION="${OFFLINE_VERSION:-v0.1.1}"
 OUT_DIR="${OFFLINE_OUTPUT_DIR:-$ROOT_DIR/dist/offline/$VERSION}"
 WORK_DIR="$(mktemp -d /private/tmp/privacyguard-offline.XXXXXX)"
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3.11)}"
@@ -66,7 +66,7 @@ copy_application() {
   [[ -d "$ROOT_DIR/backend/config" ]] && rsync -a "$ROOT_DIR/backend/config" "$target/backend/"
   rsync -a "$ROOT_DIR/frontend/dist" "$target/frontend/"
   rsync -a "$ROOT_DIR/docs/installation/" "$target/docs/installation/"
-  cp "$ROOT_DIR/LICENSE" "$ROOT_DIR/offline/THIRD_PARTY_MODELS.md" "$target/"
+  cp "$ROOT_DIR/LICENSE" "$ROOT_DIR/CHANGELOG.md" "$ROOT_DIR/offline/THIRD_PARTY_MODELS.md" "$target/"
   cp "$ROOT_DIR/offline/requirements/"*.txt "$target/offline/requirements/"
   mkdir -p "$target/backend/data" "$target/backend/uploads" "$target/backend/outputs" "$target/backend/models"
   print "$VERSION" > "$target/OFFLINE_VERSION"

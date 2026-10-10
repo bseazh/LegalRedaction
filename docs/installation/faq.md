@@ -6,7 +6,7 @@
 
 ## standard 离线包从哪里下载？
 
-进入[国内平台选择页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/)，选择 macOS 或 Windows。系统专用页只展示该平台需要的 4 个文件。国内镜像不可用时改用 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)，下载后必须用 `SHA256SUMS` 校验。
+进入[国内平台选择页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.1/)，选择 macOS 或 Windows。系统专用页只展示该平台需要的 4 个文件。国内镜像不可用时改用 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.1)，下载后必须用 `SHA256SUMS` 校验。
 
 不想自己操作命令时，复制[完整安装任务书](./copy-paste-agent-prompt.md)给支持终端操作的 Agent。Agent 会先说明路径、预计时间和系统修改，获得确认后再执行。
 
@@ -32,7 +32,7 @@ macOS 下载约 1.65 GiB，Windows 约 1.61 GiB。10 Mbps 通常约 27–35 分�
 
 ## 没有 D 盘怎么办？
 
-Windows 向导应先询问用户，然后改用 `%USERPROFILE%\Documents\PrivacyGuard\v0.1.0`。不得因为没有 D 盘直接判定电脑不支持。
+Windows 向导应先询问用户，然后改用 `%USERPROFILE%\Documents\PrivacyGuard\v0.1.1`。不得因为没有 D 盘直接判定电脑不支持。
 
 ## 只有 8 GB 内存能安装吗？
 
@@ -44,7 +44,7 @@ Windows 向导应先询问用户，然后改用 `%USERPROFILE%\Documents\Privacy
 
 ## Windows 为什么出现 tzdata 或 colorama 找不到？
 
-这是早期 v0.1.0 Windows wheelhouse 漏掉条件依赖导致的。当前包已同时包含应用和 OCR 所需的 `tzdata`，以及 OCR 所需的 `colorama`。请重新下载当前 Windows runtime 并校验 SHA-256，不需要重新下载两个模型包。
+这是早期 v0.1.0 Windows wheelhouse 漏掉条件依赖导致的。当前包已同时包含应用和 OCR 所需的 `tzdata`，以及 OCR 所需的 `colorama`。请下载 v0.1.1 的完整同版本文件并校验 SHA-256。
 
 ## Windows 安装成功却出现中文 UnicodeEncodeError？
 
@@ -65,6 +65,26 @@ Windows 向导应先询问用户，然后改用 `%USERPROFILE%\Documents\Privacy
 
 启动器会等待后端、HaS 和 OCR ready 后再打开浏览器。检测结果写入 `logs/last-check.json`，方便用户直接发给 Agent。
 
+## 双击安装后显示“安装前检查未通过”怎么办？
+
+这是新版安装门禁在保护电脑和安装结果，并非程序崩溃。先查看输出中的 `[FAIL]`：系统或架构不支持时不能强装；内存或磁盘不足时先释放资源；Windows 缺少 VC++ Runtime 时只从微软官方地址安装；缺少压缩包时把 runtime、HaS、PaddleOCR 和 `SHA256SUMS` 放回同一版本目录；哈希不一致时只重新下载失败文件；目录不可写时换到用户 Documents。所有 FAIL 清零后再双击安装。
+
+## 为什么必须使用同一版本的四个下载文件？
+
+从 v0.1.1 开始 Release 资产不再覆盖更新。runtime、HaS、PaddleOCR 和 `SHA256SUMS` 必须来自同一个版本目录，不能把 v0.1.0 模型包与 v0.1.1 runtime 混用。这样可以避免浏览器或 CDN 缓存旧文件造成哈希不一致。
+
+## Windows 停止时提示“身份记录不一致”怎么办？
+
+停止器会同时核对 PID、可执行文件路径、命令行标记和启动时间。只要任一项不一致，就不会结束该进程，以防 PID 被其他软件复用。先关闭当前窗口，重新运行 `Launch-PrivacyGuard.cmd`；如果端口仍被占用，启动器会选择备用端口。不要手动结束不认识的系统进程，可把警告和 `.run` 目录信息交给 Agent。
+
+## 启动失败后会不会留下后台进程？
+
+新版 Windows 与 macOS 启动器会在后端、HaS 或 OCR 启动失败时自动清理本次已经启动的 PrivacyGuard 进程，同时保留 `logs` 和 macOS `/tmp/redaction-*-mac.*` 日志。修复问题后直接重新启动即可，不需要重装或重新下载模型。
+
+## 安装日志在哪里？
+
+Windows 和 macOS 的安装过程都会保存在 `app/logs/install.log`。运行检测后还有 `app/logs/last-check.json`；Windows 服务日志位于 `app/logs`，macOS 服务日志位于 `/tmp/redaction-*-mac.log` 与 `.err` 文件。排查时优先把真实错误和这些日志路径交给 Agent。
+
 ## 为什么页面显示离线？
 
 页面通过 `/health/services` 检查本地服务。常见原因是模型未下载、虚拟环境缺依赖、端口占用、服务启动后崩溃，或所选档位本来就没有安装该服务。
@@ -75,7 +95,7 @@ Windows 向导应先询问用户，然后改用 `%USERPROFILE%\Documents\Privacy
 
 ## 离线包是否经过真实环境测试？
 
-是。macOS v0.1.0 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成离线安装、启动和 8000 端口冲突切换验证。Windows v0.1.0 已在 GitHub 托管的 Windows Server 2025 x64 完成下载、SHA-256、完全离线安装、模型解压、端口冲突切换、HaS、PaddleOCR、后端健康检查、停止和日志收集；测试记录为 [GitHub Actions 38044040155](https://github.com/bseazh/PrivacyGuard/actions/runs/38044040155)。不同用户电脑仍应先运行预检脚本，以排除磁盘和 Visual C++ Runtime 等本机差异。
+是。macOS v0.1.1 已在 macOS 14.8.1 Apple Silicon（M2、16 GB）完成离线安装、启动和 8000 端口冲突切换验证。Windows v0.1.1 已在 GitHub 托管的 Windows Server 2025 x64 完成下载、SHA-256、完全离线安装、模型解压、端口冲突切换、HaS、PaddleOCR、后端健康检查、停止和日志收集；测试记录为 [GitHub Actions 38044040155](https://github.com/bseazh/PrivacyGuard/actions/runs/38044040155)。不同用户电脑仍应先运行预检脚本，以排除磁盘和 Visual C++ Runtime 等本机差异。
 
 ## 为什么不提供一个脚本把所有模型全部下载？
 

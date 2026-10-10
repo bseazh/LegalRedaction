@@ -19,14 +19,14 @@ jobs:
     timeout-minutes: 90
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: offline-standard-v0.1.0
+      RELEASE_TAG: offline-standard-v0.1.1
     steps:
       - uses: actions/checkout@v4
 
       - name: Select installation directory
         shell: pwsh
         run: |
-          $root = if (Test-Path "D:\") { "D:\PrivacyGuard\v0.1.0" } else { Join-Path $env:USERPROFILE "Documents\PrivacyGuard\v0.1.0" }
+          $root = if (Test-Path "D:\") { "D:\PrivacyGuard\v0.1.1" } else { Join-Path $env:USERPROFILE "Documents\PrivacyGuard\v0.1.1" }
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           "PRIVACYGUARD_TEST_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Test root: $root"
@@ -41,9 +41,9 @@ jobs:
         run: |
           Set-Location $env:PRIVACYGUARD_TEST_ROOT
           $assets = @(
-            "PrivacyGuard-standard-windows-x64-runtime-v0.1.0.zip",
-            "PrivacyGuard-standard-model-has-v0.1.0.tar.gz",
-            "PrivacyGuard-standard-model-paddleocr-v0.1.0.tar.gz",
+            "PrivacyGuard-standard-windows-x64-runtime-v0.1.1.zip",
+            "PrivacyGuard-standard-model-has-v0.1.1.tar.gz",
+            "PrivacyGuard-standard-model-paddleocr-v0.1.1.tar.gz",
             "SHA256SUMS"
           )
           foreach ($asset in $assets) {
@@ -56,9 +56,9 @@ jobs:
           Set-Location $env:PRIVACYGUARD_TEST_ROOT
           $manifest = Get-Content .\SHA256SUMS
           $files = @(
-            "PrivacyGuard-standard-windows-x64-runtime-v0.1.0.zip",
-            "PrivacyGuard-standard-model-has-v0.1.0.tar.gz",
-            "PrivacyGuard-standard-model-paddleocr-v0.1.0.tar.gz"
+            "PrivacyGuard-standard-windows-x64-runtime-v0.1.1.zip",
+            "PrivacyGuard-standard-model-has-v0.1.1.tar.gz",
+            "PrivacyGuard-standard-model-paddleocr-v0.1.1.tar.gz"
           )
           foreach ($file in $files) {
             $line = $manifest | Where-Object { $_ -match "\s+$([regex]::Escape($file))$" } | Select-Object -First 1
@@ -74,8 +74,9 @@ jobs:
         run: |
           $app = Join-Path $env:PRIVACYGUARD_TEST_ROOT "app"
           New-Item -ItemType Directory -Force -Path $app | Out-Null
-          Expand-Archive -Path (Join-Path $env:PRIVACYGUARD_TEST_ROOT "PrivacyGuard-standard-windows-x64-runtime-v0.1.0.zip") -DestinationPath $app -Force
+          Expand-Archive -Path (Join-Path $env:PRIVACYGUARD_TEST_ROOT "PrivacyGuard-standard-windows-x64-runtime-v0.1.1.zip") -DestinationPath $app -Force
           Set-Location $app
+          .\Check-Offline-Windows.ps1 -TargetDirectory $app -PackageDirectory $env:PRIVACYGUARD_TEST_ROOT -InstallationGate
           .\Install-Offline-Windows.ps1 -PackageDirectory $env:PRIVACYGUARD_TEST_ROOT -InstallPython
           "PRIVACYGUARD_APP_ROOT=$app" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -120,6 +121,41 @@ jobs:
           }
           $blockerFile = Join-Path $env:PRIVACYGUARD_APP_ROOT ".run\test-blocker.pid"
           if (Test-Path $blockerFile) { Stop-Process -Id ([int](Get-Content $blockerFile -Raw)) -Force -ErrorAction SilentlyContinue }
+
+      - name: Verify PID reuse protection and failed-start cleanup
+        shell: pwsh
+        run: |
+          Set-Location $env:PRIVACYGUARD_APP_ROOT
+          $innocent = Start-Process -PassThru -WindowStyle Hidden -FilePath "python" -ArgumentList @("-m","http.server","39000","--bind","127.0.0.1")
+          try {
+            $info = Get-CimInstance Win32_Process -Filter "ProcessId = $($innocent.Id)"
+            [ordered]@{
+              pid = $innocent.Id
+              executable = $info.ExecutablePath
+              command_markers = @("privacyguard-marker-that-is-not-present")
+              started_at = $innocent.StartTime.ToUniversalTime().ToString("o")
+            } | ConvertTo-Json | Set-Content .\.run\app.process.json -Encoding utf8
+            $innocent.Id | Set-Content .\.run\app.pid
+            .\Stop-PrivacyGuard.ps1 -Quiet
+            if (-not (Get-Process -Id $innocent.Id -ErrorAction SilentlyContinue)) { throw "PID reuse protection terminated an unrelated process." }
+          } finally {
+            Stop-Process -Id $innocent.Id -Force -ErrorAction SilentlyContinue
+          }
+
+          $ocrScript = Join-Path $env:PRIVACYGUARD_APP_ROOT "backend\scripts\ocr_server.py"
+          $disabledScript = "$ocrScript.disabled"
+          Move-Item $ocrScript $disabledScript
+          try {
+            $failed = $false
+            try { .\Start-PrivacyGuard.ps1 -NoBrowser -StartupTimeoutSeconds 10 } catch { $failed = $true }
+            if (-not $failed) { throw "The intentionally broken startup unexpectedly succeeded." }
+            foreach ($name in @("app","ocr","has")) {
+              if (Test-Path ".\.run\$name.process.json") { throw "Failed startup left a process record for $name." }
+            }
+          } finally {
+            Move-Item $disabledScript $ocrScript -Force
+            .\Stop-PrivacyGuard.ps1 -Quiet
+          }
 
       - name: Collect test logs
         if: always()

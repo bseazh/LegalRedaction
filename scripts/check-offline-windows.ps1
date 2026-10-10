@@ -1,6 +1,8 @@
 param(
-    [string]$TargetDirectory = "D:\PrivacyGuard\v0.1.0",
-    [double]$SpeedMbps = 0
+    [string]$TargetDirectory = "D:\PrivacyGuard\v0.1.1",
+    [double]$SpeedMbps = 0,
+    [string]$PackageDirectory = "",
+    [switch]$InstallationGate
 )
 
 $ErrorActionPreference = "SilentlyContinue"
@@ -8,6 +10,8 @@ $Failures = 0
 $Warnings = 0
 $DownloadGiB = 1.61
 $WheelCount = 164
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $PackageDirectory) { $PackageDirectory = Split-Path -Parent $ScriptRoot }
 function Ok($Message) { Write-Host "[OK] $Message" -ForegroundColor Green }
 function Warn($Message) { $script:Warnings++; Write-Host "[WARN] $Message" -ForegroundColor Yellow }
 function Fail($Message) { $script:Failures++; Write-Host "[FAIL] $Message" -ForegroundColor Red }
@@ -16,7 +20,7 @@ Write-Host "PrivacyGuard standard offline preflight (Windows)"
 Write-Host "Target: $TargetDirectory"
 Write-Host "------------------------------------------------"
 
-if ([Environment]::Is64BitOperatingSystem) { Ok "Architecture: Windows x64" } else { Fail "The v0.1.0 package requires Windows x64." }
+if ([Environment]::Is64BitOperatingSystem) { Ok "Architecture: Windows x64" } else { Fail "The v0.1.1 package requires Windows x64." }
 $Os = Get-CimInstance Win32_OperatingSystem
 if ($Os) {
     $Build = [int]$Os.BuildNumber
@@ -29,7 +33,7 @@ $TargetRoot = [IO.Path]::GetPathRoot($TargetDirectory)
 $DriveName = if ($TargetRoot) { $TargetRoot.Substring(0,1) } else { "" }
 $Drive = if ($DriveName) { Get-PSDrive -Name $DriveName } else { $null }
 if (-not $Drive) {
-    Fail "Target drive $TargetRoot does not exist. Ask before switching to $env:USERPROFILE\Documents\PrivacyGuard\v0.1.0."
+    Fail "Target drive $TargetRoot does not exist. Ask before switching to $env:USERPROFILE\Documents\PrivacyGuard\v0.1.1."
 } else {
     $FreeGb = [math]::Floor($Drive.Free / 1GB)
     if ($FreeGb -ge 15) { Ok "Free disk on ${TargetRoot}: ${FreeGb} GB" } elseif ($FreeGb -ge 10) { Warn "Free disk on ${TargetRoot}: ${FreeGb} GB; 15 GB is recommended." } else { Fail "Free disk on ${TargetRoot}: ${FreeGb} GB; at least 10 GB is required." }
@@ -42,7 +46,8 @@ $VcRuntime = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Run
 if ($VcRuntime -and $VcRuntime.Installed -eq 1) {
     Ok "Microsoft Visual C++ x64 Runtime: $($VcRuntime.Version)"
 } else {
-    Warn "Microsoft Visual C++ 2015-2022 x64 Runtime was not detected. Download only from https://aka.ms/vs/17/release/vc_redist.x64.exe and install it before PrivacyGuard."
+    if ($InstallationGate) { Fail "Microsoft Visual C++ 2015-2022 x64 Runtime is required. Install it only from https://aka.ms/vs/17/release/vc_redist.x64.exe." }
+    else { Warn "Microsoft Visual C++ 2015-2022 x64 Runtime was not detected. Download only from https://aka.ms/vs/17/release/vc_redist.x64.exe and install it before PrivacyGuard." }
 }
 
 $Python = $null
@@ -52,6 +57,42 @@ if ($Python) { Ok "Python 3.11 is already installed: $Python" } else { Warn "Pyt
 foreach ($Port in @(8000,8080,8082)) {
     $Listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($Listener) { Warn "Port $Port is already in use by PID $($Listener.OwningProcess)." } else { Ok "Port $Port is available" }
+}
+
+if ($InstallationGate) {
+    Write-Host "------------------------------------------------"
+    Write-Host "Installation gate: package integrity and write access"
+    $VersionFile = Join-Path $ScriptRoot "OFFLINE_VERSION"
+    if (-not (Test-Path $VersionFile)) { Fail "Missing OFFLINE_VERSION in $ScriptRoot" }
+    else {
+        $Version = (Get-Content $VersionFile -Raw).Trim()
+        $ManifestPath = Join-Path $PackageDirectory "SHA256SUMS"
+        if (-not (Test-Path $ManifestPath)) { Fail "Missing SHA256SUMS in $PackageDirectory" }
+        else {
+            $RequiredFiles = @(
+                "PrivacyGuard-standard-windows-x64-runtime-$Version.zip",
+                "PrivacyGuard-standard-model-has-$Version.tar.gz",
+                "PrivacyGuard-standard-model-paddleocr-$Version.tar.gz"
+            )
+            $Manifest = Get-Content $ManifestPath
+            foreach ($Name in $RequiredFiles) {
+                $Path = Join-Path $PackageDirectory $Name
+                if (-not (Test-Path $Path)) { Fail "Missing package: $Name"; continue }
+                $Line = $Manifest | Where-Object { $_ -match "\s+$([regex]::Escape($Name))$" } | Select-Object -First 1
+                if (-not $Line) { Fail "SHA256SUMS has no entry for $Name"; continue }
+                $Expected = ($Line -split "\s+")[0].ToLowerInvariant()
+                $Actual = (Get-FileHash -Algorithm SHA256 $Path).Hash.ToLowerInvariant()
+                if ($Expected -eq $Actual) { Ok "SHA-256: $Name" } else { Fail "SHA-256 mismatch: $Name" }
+            }
+        }
+    }
+    try {
+        New-Item -ItemType Directory -Force -Path $TargetDirectory | Out-Null
+        $Probe = Join-Path $TargetDirectory ".privacyguard-write-test-$PID.tmp"
+        [IO.File]::WriteAllText($Probe, "ok")
+        Remove-Item $Probe -Force
+        Ok "Installation directory is writable: $TargetDirectory"
+    } catch { Fail "Installation directory is not writable: $TargetDirectory ($($_.Exception.Message))" }
 }
 
 Write-Host "------------------------------------------------"

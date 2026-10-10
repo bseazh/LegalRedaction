@@ -1,12 +1,15 @@
 #!/bin/zsh
 set -u
 
-TARGET_DIR="${1:-$HOME/Documents/PrivacyGuard/v0.1.0}"
+TARGET_DIR="${1:-$HOME/Documents/PrivacyGuard/v0.1.1}"
 SPEED_MBPS="${2:-0}"
 FAILURES=0
 WARNINGS=0
 DOWNLOAD_GIB="1.65"
 WHEEL_COUNT="166"
+INSTALLATION_GATE="${PRIVACYGUARD_INSTALL_GATE:-0}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PACKAGE_DIR="${PRIVACYGUARD_PACKAGE_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
 ok() { print "[OK] $1"; }
 warn() { WARNINGS=$((WARNINGS + 1)); print "[WARN] $1"; }
@@ -18,7 +21,7 @@ print "Target: $TARGET_DIR"
 print "------------------------------------------------"
 
 [[ "$(uname -s)" == "Darwin" ]] || fail "This package requires macOS."
-[[ "$(uname -m)" == "arm64" ]] && ok "Architecture: Apple Silicon arm64" || fail "The v0.1.0 macOS package does not support Intel Macs."
+[[ "$(uname -m)" == "arm64" ]] && ok "Architecture: Apple Silicon arm64" || fail "The v0.1.1 macOS package does not support Intel Macs."
 
 MAC_VERSION="$(sw_vers -productVersion 2>/dev/null || print 0)"
 MAC_MAJOR="${MAC_VERSION%%.*}"
@@ -50,6 +53,42 @@ for port in 8000 8080 8082; do
   owner="$(lsof -nP -iTCP:$port -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1" (PID "$2")"}')"
   [[ -n "$owner" ]] && warn "Port $port is already in use by $owner." || ok "Port $port is available"
 done
+
+if [[ "$INSTALLATION_GATE" == "1" ]]; then
+  print "------------------------------------------------"
+  print "Installation gate: package integrity and write access"
+  VERSION_FILE="$SCRIPT_DIR/OFFLINE_VERSION"
+  if [[ ! -f "$VERSION_FILE" ]]; then
+    fail "Missing OFFLINE_VERSION in $SCRIPT_DIR"
+  else
+    VERSION="$(<"$VERSION_FILE")"
+    MANIFEST="$PACKAGE_DIR/SHA256SUMS"
+    if [[ ! -f "$MANIFEST" ]]; then
+      fail "Missing SHA256SUMS in $PACKAGE_DIR"
+    else
+      for name in \
+        "PrivacyGuard-standard-macos-arm64-runtime-$VERSION.tar.gz" \
+        "PrivacyGuard-standard-model-has-$VERSION.tar.gz" \
+        "PrivacyGuard-standard-model-paddleocr-$VERSION.tar.gz"
+      do
+        file="$PACKAGE_DIR/$name"
+        if [[ ! -f "$file" ]]; then fail "Missing package: $name"; continue; fi
+        expected="$(awk -v name="$name" '$2 == name {print $1}' "$MANIFEST")"
+        if [[ -z "$expected" ]]; then fail "SHA256SUMS has no entry for $name"; continue; fi
+        actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+        [[ "$actual" == "$expected" ]] && ok "SHA-256: $name" || fail "SHA-256 mismatch: $name"
+      done
+    fi
+  fi
+  mkdir -p "$TARGET_DIR" 2>/dev/null || true
+  probe="$TARGET_DIR/.privacyguard-write-test-$$.tmp"
+  if print ok > "$probe" 2>/dev/null; then
+    /bin/rm -f "$probe"
+    ok "Installation directory is writable: $TARGET_DIR"
+  else
+    fail "Installation directory is not writable: $TARGET_DIR"
+  fi
+fi
 
 print "------------------------------------------------"
 print "Installation plan"

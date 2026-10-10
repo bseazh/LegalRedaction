@@ -35,6 +35,16 @@ function Wait-Json([string]$Uri, [int]$TimeoutSeconds) {
     } while ((Get-Date) -lt $Deadline)
     return $null
 }
+function Save-ProcessRecord([string]$Name, $Process, [string]$ExpectedExecutable, [string[]]$CommandMarkers) {
+    $Process.Refresh()
+    [ordered]@{
+        pid = $Process.Id
+        executable = [IO.Path]::GetFullPath($ExpectedExecutable)
+        command_markers = $CommandMarkers
+        started_at = $Process.StartTime.ToUniversalTime().ToString("o")
+    } | ConvertTo-Json | Set-Content (Join-Path $Run "$Name.process.json") -Encoding UTF8
+    $Process.Id | Set-Content (Join-Path $Run "$Name.pid")
+}
 
 # Restart only processes previously launched by this package. Never terminate an unrelated port owner.
 $StopScript = Join-Path $Root "Stop-PrivacyGuard.ps1"
@@ -47,8 +57,9 @@ $OcrPort = Select-Port @(8082,18082,28082,38082) "OCR"
 Write-Host "正在启动 PrivacyGuard..."
 Write-Host "应用端口：$BackendPort；HaS：$HasPort；OCR：$OcrPort"
 
+try {
 $Has = Start-Process -PassThru -WindowStyle Hidden -FilePath $Llama.FullName -ArgumentList @("-m",$Model,"--host","127.0.0.1","--port","$HasPort","-c","4096","--chat-template","chatml") -RedirectStandardOutput (Join-Path $Logs "has.log") -RedirectStandardError (Join-Path $Logs "has.err.log")
-$Has.Id | Set-Content (Join-Path $Run "has.pid")
+Save-ProcessRecord "has" $Has $Llama.FullName @($Model,"--port $HasPort")
 
 $env:OCR_DEVICE="cpu"
 $env:OCR_VL_ENABLED="0"
@@ -58,8 +69,9 @@ $env:OCR_PORT="$OcrPort"
 $env:PADDLE_PDX_CACHE_HOME=Join-Path $Root "backend\models\paddlex-cache"
 $env:PADDLE_PDX_MODEL_SOURCE="modelscope"
 $env:PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK="True"
-$Ocr = Start-Process -PassThru -WindowStyle Hidden -FilePath $OcrPython -ArgumentList (Join-Path $Root "backend\scripts\ocr_server.py") -RedirectStandardOutput (Join-Path $Logs "ocr.log") -RedirectStandardError (Join-Path $Logs "ocr.err.log")
-$Ocr.Id | Set-Content (Join-Path $Run "ocr.pid")
+$OcrScript = Join-Path $Root "backend\scripts\ocr_server.py"
+$Ocr = Start-Process -PassThru -WindowStyle Hidden -FilePath $OcrPython -ArgumentList $OcrScript -RedirectStandardOutput (Join-Path $Logs "ocr.log") -RedirectStandardError (Join-Path $Logs "ocr.err.log")
+Save-ProcessRecord "ocr" $Ocr $OcrPython @($OcrScript)
 
 $env:AUTH_ENABLED="false"
 $env:DEBUG="false"
@@ -73,7 +85,7 @@ $env:HAS_NER_MAX_TOKENS="1024"
 $env:OCR_BASE_URL="http://127.0.0.1:$OcrPort"
 $env:OCR_REQUIRE_GPU="false"
 $App = Start-Process -PassThru -WindowStyle Hidden -WorkingDirectory $Root -FilePath $AppPython -ArgumentList @("-m","uvicorn","app.main:app","--app-dir",(Join-Path $Root "backend"),"--host","127.0.0.1","--port","$BackendPort") -RedirectStandardOutput (Join-Path $Logs "app.log") -RedirectStandardError (Join-Path $Logs "app.err.log")
-$App.Id | Set-Content (Join-Path $Run "app.pid")
+Save-ProcessRecord "app" $App $AppPython @("app.main:app",(Join-Path $Root "backend"))
 
 $Runtime = [ordered]@{
     platform = "windows"
@@ -107,3 +119,9 @@ if (-not $Passed) { throw "模型服务在等待时间内未就绪。请双击 C
 Write-Host "应用地址：$($Runtime.app_url)"
 Write-Host "以后可直接双击 Launch-PrivacyGuard.cmd 启动。"
 if (-not $NoBrowser) { Start-Process $Runtime.app_url }
+} catch {
+    $Failure = $_
+    Write-Host "启动失败，正在安全清理本次启动的 PrivacyGuard 进程。日志会保留在 $Logs" -ForegroundColor Red
+    try { & $StopScript -Quiet } catch {}
+    throw $Failure
+}

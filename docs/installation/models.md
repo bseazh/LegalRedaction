@@ -2,7 +2,7 @@
 
 模型文件不纳入 Git。下载前必须核对模型卡与许可证。
 
-已获授权的 standard v0.1.0 离线发行可从[国内平台选择页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/)或 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)下载。请选择自己的系统页面，不要遗漏 HaS、PaddleOCR 与 `SHA256SUMS`。
+已获授权的 standard v0.1.1 离线发行可从[国内平台选择页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.1/)或 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.1)下载。请选择自己的系统页面，不要遗漏 HaS、PaddleOCR 与 `SHA256SUMS`。
 
 | 能力 | 预期位置 | 说明 |
 |---|---|---|

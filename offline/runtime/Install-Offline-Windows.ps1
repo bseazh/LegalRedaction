@@ -6,6 +6,9 @@ $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
 $StartedAt = Get-Date
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Logs = Join-Path $Root "logs"
+New-Item -ItemType Directory -Force -Path $Logs | Out-Null
+Start-Transcript -Path (Join-Path $Logs "install.log") -Append | Out-Null
 if (-not $PackageDirectory) { $PackageDirectory = Split-Path -Parent $Root }
 if (-not [Environment]::Is64BitOperatingSystem) { throw "此离线包仅支持 Windows x64。" }
 
@@ -74,3 +77,4 @@ Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -c "import paddle, p
 Write-Host "[4/4] 环境导入检查通过。"
 $Elapsed = [math]::Round(((Get-Date) - $StartedAt).TotalMinutes, 1)
 Write-Host "离线安装完成，用时 $Elapsed 分钟。双击 Launch-PrivacyGuard.cmd 启动。"
+Stop-Transcript | Out-Null

@@ -16,6 +16,17 @@ LOCATE_MODEL="$BACKEND_DIR/models/locateanything/LocateAnything-3B-HF"
 RUN_DIR="$ROOT_DIR/.run"
 LOG_DIR="$ROOT_DIR/logs"
 mkdir -p "$RUN_DIR" "$LOG_DIR"
+START_COMPLETE="false"
+
+cleanup_failed_start() {
+  if [[ "$START_COMPLETE" != "true" ]]; then
+    print -u2 "启动未完成，正在清理本次启动的 PrivacyGuard 服务；日志会继续保留。"
+    for label in com.bigapple.redaction.app com.bigapple.redaction.has com.bigapple.redaction.ocr com.bigapple.redaction.locate com.bigapple.redaction.locatemps; do
+      launchctl remove "$label" >/dev/null 2>&1 || true
+    done
+  fi
+}
+trap cleanup_failed_start EXIT
 
 require_executable() {
   if [[ ! -x "$1" ]]; then
@@ -163,6 +174,7 @@ until "$ROOT_DIR/scripts/test-macos.sh" >/dev/null 2>&1; do
   sleep 5
 done
 "$ROOT_DIR/scripts/test-macos.sh"
+START_COMPLETE="true"
 print "应用：http://127.0.0.1:$APP_PORT"
 print "以后可直接双击 Launch-PrivacyGuard.command 启动。"
 if [[ "$NO_BROWSER" != "true" ]]; then open "http://127.0.0.1:$APP_PORT"; fi
