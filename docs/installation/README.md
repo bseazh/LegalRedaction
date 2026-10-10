@@ -7,7 +7,7 @@
 | 档位 | 主要能力 | 推荐环境 | 预计本地空间 |
 |---|---|---|---:|
 | `basic` | TXT、DOCX、文本型 PDF、规则与基础处理 | 普通 Mac/Windows | 10GB |
-| `standard` | basic + HaS 语义识别 + OCR/扫描 PDF | Apple Silicon Mac；Windows + WSL2/NVIDIA | 20GB |
+| `standard` | basic + HaS 语义识别 + OCR/扫描 PDF | Apple Silicon Mac；Windows x64 CPU 兼容模式 | 20GB |
 | `full` | standard + 人脸、印章、签名等视觉定位 | NVIDIA 16GB 显存推荐；Mac MPS 属兼容模式 | 35GB |
 
 不确定时选择 `standard`。只处理有文字层的合同 PDF，可先选 `basic`。
@@ -37,6 +37,8 @@ powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile sta
 - [standard 离线包](./offline-standard.md)
 - [Agent 安装向导](./agent-guide.md)
 - [FAQ](./faq.md)
+
+如选择 standard 离线安装，可直接进入[国内下载页选择 macOS 或 Windows](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/)。国内镜像不可用时使用 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)。
 
 ## 安装完成标准
 

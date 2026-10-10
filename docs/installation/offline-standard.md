@@ -12,7 +12,9 @@ standard 离线发行由四个组件组成：
 ## 下载入口
 
 - GitHub Release（当前可用）：https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0
-- 国内镜像（DNS 生效后）：https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/
+- 国内平台选择页：https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/
+- macOS 专用页：https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/macos.html
+- Windows 专用页：https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/windows.html
 
 国内镜像无法访问时直接改用 GitHub；不要关闭 TLS 校验。两个来源中的同名文件应通过相同的 `SHA256SUMS` 校验。
 

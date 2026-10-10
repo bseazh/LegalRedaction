@@ -4,6 +4,14 @@
 
 只处理可复制文字的 PDF/DOCX 选 basic；需要扫描 PDF 选 standard；需要人脸、印章和签名定位才选 full。
 
+## standard 离线包从哪里下载？
+
+进入[国内平台选择页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/)，选择 macOS 或 Windows。系统专用页只展示该平台需要的 4 个文件。国内镜像不可用时改用 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)，下载后必须用 `SHA256SUMS` 校验。
+
+## 为什么不能只下载运行包？
+
+运行包不包含全部模型权重。standard 还需要 HaS 文本识别模型和 PaddleOCR 模型；请下载系统专用页列出的全部 4 个文件并放在同一目录。
+
 ## 为什么页面显示离线？
 
 页面通过 `/health/services` 检查本地服务。常见原因是模型未下载、虚拟环境缺依赖、端口占用、服务启动后崩溃，或所选档位本来就没有安装该服务。

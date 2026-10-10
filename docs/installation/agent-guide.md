@@ -17,11 +17,12 @@
 
 ## standard 离线包下载源选择
 
-1. 先探测国内镜像 `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/`；
-2. 若域名未解析、TLS 尚未就绪、连接超时或返回非 2xx，则改用 GitHub Release：`https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0`；
-3. macOS 下载 macOS runtime、HaS、PaddleOCR 和 `SHA256SUMS`；Windows 下载 Windows runtime、HaS、PaddleOCR 和 `SHA256SUMS`；
-4. 支持断点续传，但不得通过关闭 TLS 校验解决网络问题；
-5. 下载完成后必须校验 SHA-256，失败的文件应删除并重新下载。
+1. 必须先确认用户使用 macOS 还是 Windows，不得先给出一整页混合文件让用户自行判断；
+2. macOS 用户给出 `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/macos.html`，Windows 用户给出 `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/windows.html`；尚未确认系统时才给平台选择页 `https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/`；
+3. 先探测对应国内页面；若连接超时、TLS 错误或返回非 2xx，则改用 GitHub Release：`https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0`；
+4. macOS 下载 macOS runtime、HaS、PaddleOCR 和 `SHA256SUMS`；Windows 下载 Windows runtime、HaS、PaddleOCR 和 `SHA256SUMS`；
+5. 支持断点续传，但不得通过关闭 TLS 校验解决网络问题；
+6. 下载完成后必须校验 SHA-256，失败的文件应删除并重新下载。
 
 ## 执行流程
 

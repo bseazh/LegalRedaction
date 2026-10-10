@@ -1,5 +1,12 @@
 # macOS 安装
 
+## standard 离线安装入口
+
+- [macOS Apple Silicon 专用下载页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/macos.html)
+- [GitHub Release 备用源](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)
+
+专用页只列出 macOS 所需的运行包、HaS、PaddleOCR 和 `SHA256SUMS`。当前离线运行包仅适用于 Apple Silicon，不适用于 Intel Mac。
+
 ## 1. 检查机器
 
 ```bash

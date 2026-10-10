@@ -1,5 +1,12 @@
 # Windows 安装
 
+## standard 离线安装入口
+
+- [Windows x64 专用下载页](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/windows.html)
+- [GitHub Release 备用源](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)
+
+standard 离线包采用 Windows x64 CPU 兼容模式，不要求 WSL 或 NVIDIA GPU。只有源码安装和 full 视觉方案才需要继续参考下方 WSL/GPU 配置。
+
 ## 1. 先运行检查
 
 在 PowerShell 中执行：
