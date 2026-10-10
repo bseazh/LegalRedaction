@@ -8,13 +8,17 @@
 
 专用页只列出 macOS 所需的运行包、HaS、PaddleOCR 和 `SHA256SUMS`。当前离线运行包仅适用于 Apple Silicon，不适用于 Intel Mac。
 
+离线版要求 macOS 14+，至少 10 GB 可用磁盘（建议 15 GB）和 8 GB 内存（建议 16 GB）。运行 `./scripts/check-offline-macos.sh` 可只读检查；离线版不需要 Node.js、Git、Homebrew、WSL 或 CUDA。Python 3.11 官方安装器已包含在运行包内。
+
+## 源码安装
+
 ## 1. 检查机器
 
 ```bash
 ./scripts/doctor-macos.sh standard
 ```
 
-重点确认：Apple Silicon、内存、磁盘、Python 3.11、Node.js、Homebrew，以及模型目录状态。
+下列内容面向源码安装，重点确认 Apple Silicon、内存、磁盘、Python 3.11、Node.js、Homebrew，以及模型目录状态。
 
 ## 2. 安装基础工具
 

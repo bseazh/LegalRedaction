@@ -1,5 +1,14 @@
 # PrivacyGuard standard 离线包
 
+安装前要求：
+
+- macOS：macOS 14+、Apple Silicon；先运行 `./check-offline-macos.sh`；
+- Windows：Windows 10 22H2/Windows 11 x64；先运行 `.\Check-Offline-Windows.ps1`；
+- 至少 10 GB 可用磁盘，建议 15 GB；至少 8 GB 内存，建议 16 GB；
+- Windows 可能需要 Microsoft Visual C++ 2015–2022 x64 Runtime，缺失时只从 `https://aka.ms/vs/17/release/vc_redist.x64.exe` 下载。
+
+包内已包含前端、Python 3.11 安装器、Python wheels 和运行时。standard 离线版不需要 Node.js、Git、Homebrew、WSL、Docker、CUDA 或 NVIDIA GPU。
+
 本运行包需要同版本的两个模型包放在运行包目录的上一级：
 
 - `PrivacyGuard-standard-model-has-<version>.tar.gz`

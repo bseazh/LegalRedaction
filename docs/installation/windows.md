@@ -8,6 +8,10 @@
 
 standard 离线包采用 Windows x64 CPU 兼容模式，不要求 WSL 或 NVIDIA GPU。只有源码安装和 full 视觉方案才需要继续参考下方 WSL/GPU 配置。
 
+离线版要求 Windows 10 22H2/Windows 11 x64、PowerShell 5.1+、系统 `tar.exe`、至少 10 GB 可用磁盘（建议 15 GB）和 8 GB 内存（建议 16 GB）。运行 `scripts\check-offline-windows.ps1` 可只读检查。Python 3.11 安装器已包含；若缺少 Microsoft Visual C++ 2015–2022 x64 Runtime，只能从[微软官方地址](https://aka.ms/vs/17/release/vc_redist.x64.exe)下载。
+
+## 源码安装 / full 视觉方案
+
 ## 1. 先运行检查
 
 在 PowerShell 中执行：

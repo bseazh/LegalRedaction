@@ -52,6 +52,8 @@ Install PrivacyGuard standard v0.1.0 offline edition on this computer. First rea
 
 Full workflow: [copy-paste Agent installation prompt](./docs/installation/copy-paste-agent-prompt.md).
 
+The standard offline package already includes the built frontend, Python 3.11 installer, Python wheels, llama.cpp, HaS, and PaddleOCR. It does not require Node.js, Git, Homebrew, WSL, Docker, or CUDA. Windows only needs the official Microsoft Visual C++ x64 Runtime when it is missing; see [requirements](./docs/installation/requirements.md).
+
 - [Installation entry](./docs/installation/README.md)
 - [macOS guide](./docs/installation/macos.md)
 - [Windows guide](./docs/installation/windows.md)

@@ -14,6 +14,10 @@
 
 运行包不包含全部模型权重。standard 还需要 HaS 文本识别模型和 PaddleOCR 模型；请下载系统专用页列出的全部 4 个文件并放在同一目录。
 
+## 离线版还要安装哪些依赖？
+
+大部分依赖已经包含：构建后的前端、Python wheels、Python 3.11 安装器、llama.cpp、HaS 和 PaddleOCR。standard 离线版不需要 Node.js、Git、Homebrew、WSL、Docker、CUDA 或 NVIDIA GPU。Windows 若缺少 Microsoft Visual C++ 2015–2022 x64 Runtime，需要从微软官方下载；macOS 当前包要求 macOS 14+ Apple Silicon。详见 [环境要求](./requirements.md)。
+
 ## 为什么页面显示离线？
 
 页面通过 `/health/services` 检查本地服务。常见原因是模型未下载、虚拟环境缺依赖、端口占用、服务启动后崩溃，或所选档位本来就没有安装该服务。

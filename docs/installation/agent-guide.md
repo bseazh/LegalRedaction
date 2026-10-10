@@ -31,7 +31,7 @@
 1. 读取本文件、[requirements.md](./requirements.md) 和对应系统指南；
 2. 运行 `doctor-macos.sh` 或 `doctor-windows.ps1`；
 3. 根据答案推荐 `basic/standard/full`，说明缺失能力；
-4. 安装前再次列出预计下载量（standard 约 1.7 GB）、建议预留磁盘（至少 8 GB）和系统修改；
+4. 安装前再次列出预计下载量（standard 约 1.8 GB）、磁盘要求（至少 10 GB、建议 15 GB）和系统修改；离线版不要误报 Node、Git、Homebrew、WSL、Docker 或 CUDA 为必需依赖；
 5. 创建隔离虚拟环境，不污染系统 Python；
 6. 下载模型时记录来源和校验值；
 7. 启动后检查 `/health` 和 `/health/services`；

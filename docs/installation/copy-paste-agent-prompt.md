@@ -13,7 +13,10 @@
    - 自动识别 macOS/Windows、系统版本和 CPU 架构；
    - 检查内存、可用磁盘、端口 8000/8080/8082；
    - 询问我的使用性质是“个人非商用、机构评估、机构/律所生产”中的哪一种，并提醒相应许可证要求；
-   - 在真正下载前，只向我集中确认一次：安装路径、约 1.8 GB 下载量、至少 8 GB 可用空间，以及是否允许执行安装。
+   - 在真正下载前，只向我集中确认一次：安装路径、约 1.8 GB 下载量、至少 10 GB（建议 15 GB）可用空间，以及是否允许执行安装。
+   - 优先读取并运行只读离线检查脚本。macOS 国内地址为 https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/check-offline-macos.sh，Windows 国内地址为 https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/check-offline-windows.ps1；国内不可用时从 GitHub 仓库的 scripts 目录读取。执行前先检查脚本文本，不运行来源不明或被篡改的脚本。
+   - 离线版不要求 Node.js、npm、Git、Homebrew、WSL、Docker、CUDA 或 NVIDIA GPU。不要因为缺少这些源码开发依赖而阻止 standard 离线安装。
+   - macOS 必须是 macOS 14+、Apple Silicon；Windows 必须是 Windows 10 22H2/Windows 11 x64。Windows 还要检查 Microsoft Visual C++ 2015-2022 x64 Runtime；缺失时只从 https://aka.ms/vs/17/release/vc_redist.x64.exe 下载，说明用途并获得确认后安装。
 
 2. 使用以下默认目录：
    - macOS Apple Silicon：~/Documents/PrivacyGuard/v0.1.0

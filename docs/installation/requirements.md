@@ -1,28 +1,39 @@
 # 环境要求
 
-## 通用要求
+## standard v0.1.0 离线包
 
-- Git、稳定网络和至少 10GB 可用磁盘；
-- Node.js 24 LTS（20–24 可用于开发验证）；
-- Python 3.11；
-- 端口 `3000/8000/8080/8082/8090` 未被不相关程序占用；
-- 模型权重不得提交到 Git，用户文件和输出不得上传到公共仓库。
+离线包已经包含构建后的前端、Python wheels、Python 3.11 官方安装器、llama.cpp、HaS 和 PaddleOCR 模型。**不需要** Node.js、npm、Git、Homebrew、WSL、Docker、NVIDIA GPU 或 CUDA。
 
-## macOS
+通用要求：
 
-- 推荐 Apple Silicon（M1/M2/M3/M4）；
-- standard 建议 16GB 内存，full 建议 24GB 以上；
-- OCR 使用 Mac CPU 兼容模式；
-- HaS 可通过 llama.cpp/Metal 运行；
-- LocateAnything 可尝试 MPS，但属于兼容路径，速度和算子支持不等同于 NVIDIA CUDA。
+- 下载量约 1.8 GB；至少 10 GB 可用磁盘，建议 15 GB 以上；
+- 至少 8 GB 内存，建议 16 GB；
+- 端口 `8000/8080/8082` 未被不相关程序占用；
+- 能运行系统自带的 SHA-256、tar/解压和 HTTPS 下载工具；
+- 安装前运行对应的只读检查脚本：`scripts/check-offline-macos.sh` 或 `scripts/check-offline-windows.ps1`。
 
-Intel Mac 建议只使用 basic。强制运行重型模型可能非常慢。
+macOS 离线包：
 
-## Windows
+- macOS 14 或更高版本；
+- Apple Silicon arm64（M1/M2/M3/M4 及后续），不支持 Intel Mac；
+- Python 3.11 缺失时，使用运行包内 `prerequisites/python-3.11.9-macos11.pkg`；
+- OCR 使用 CPU，HaS 使用 llama.cpp/Metal。
 
-- Windows 10 22H2 或 Windows 11；
-- standard/full 需要 WSL2；
-- full 推荐 NVIDIA GPU、16GB 显存和匹配的驱动/CUDA；
+Windows 离线包：
+
+- Windows 10 22H2（build 19045）或 Windows 11 x64；
+- PowerShell 5.1+ 和系统 `tar.exe`；
+- Python 3.11 缺失时，安装脚本可使用包内 `prerequisites\python-3.11.9-amd64.exe`；
+- 需要 Microsoft Visual C++ 2015–2022 x64 Runtime。若检查不到，只能从微软官方下载：https://aka.ms/vs/17/release/vc_redist.x64.exe 。
+
+## 源码安装 / full 视觉版
+
+以下要求只针对从源码开发或 full 视觉方案，不应套用到 standard 离线包：
+
+- Git、Node.js 24 LTS、npm、Python 3.11；
+- macOS 可使用 Homebrew 准备开发依赖；
+- Windows standard/full 源码路径可能需要 WSL2；
+- full 推荐 NVIDIA GPU、16 GB 显存和匹配的驱动/CUDA；
 - Docker Desktop 可选，但不能代替模型权重和 GPU 驱动检查。
 
 ## 许可证要求

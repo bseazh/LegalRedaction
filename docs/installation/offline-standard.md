@@ -19,6 +19,14 @@ standard 离线发行由四个组件组成：
 
 国内镜像无法访问时直接改用 GitHub；不要关闭 TLS 校验。两个来源中的同名文件应通过相同的 `SHA256SUMS` 校验。
 
+## 依赖检查
+
+- macOS：macOS 14+、Apple Silicon、至少 10 GB 可用磁盘；运行 `scripts/check-offline-macos.sh`。
+- Windows：Windows 10 22H2/Windows 11 x64、PowerShell 5.1+、`tar.exe`、至少 10 GB 可用磁盘；运行 `scripts\check-offline-windows.ps1`。
+- 两个平台均建议 16 GB 内存和 15 GB 以上可用磁盘。
+- Python 3.11 安装器和全部 Python wheels 已包含；不需要 Node.js、Git、Homebrew、WSL、Docker、GPU 或 CUDA。
+- Windows 如果缺少 Microsoft Visual C++ 2015–2022 x64 Runtime，应只从微软官方地址下载：https://aka.ms/vs/17/release/vc_redist.x64.exe 。
+
 macOS Apple Silicon 下载以下四个文件：
 
 - `PrivacyGuard-standard-macos-arm64-runtime-v0.1.0.tar.gz`

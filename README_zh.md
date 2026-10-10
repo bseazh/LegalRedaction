@@ -52,6 +52,8 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 
 完整内容及目录结构：[复制给 Agent 的一键安装指令](./docs/installation/copy-paste-agent-prompt.md)。
 
+standard 离线包已包含前端、Python 3.11 安装器、Python wheels、llama.cpp、HaS 与 PaddleOCR；不需要另外安装 Node.js、Git、Homebrew、WSL、Docker 或 CUDA。Windows 仅在缺失时需要从微软官方补装 Visual C++ x64 Runtime，详见[环境要求](./docs/installation/requirements.md)。
+
 - [安装入口与版本选择](./docs/installation/README.md)
 - [macOS 安装](./docs/installation/macos.md)
 - [Windows 安装](./docs/installation/windows.md)

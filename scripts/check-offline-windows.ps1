@@ -1,0 +1,57 @@
+param([string]$TargetDirectory = "D:\PrivacyGuard\v0.1.0")
+
+$ErrorActionPreference = "SilentlyContinue"
+$Failures = 0
+$Warnings = 0
+function Ok($Message) { Write-Host "[OK] $Message" -ForegroundColor Green }
+function Warn($Message) { $script:Warnings++; Write-Host "[WARN] $Message" -ForegroundColor Yellow }
+function Fail($Message) { $script:Failures++; Write-Host "[FAIL] $Message" -ForegroundColor Red }
+
+Write-Host "PrivacyGuard standard offline preflight (Windows)"
+Write-Host "Target: $TargetDirectory"
+Write-Host "------------------------------------------------"
+
+if ([Environment]::Is64BitOperatingSystem) { Ok "Architecture: Windows x64" } else { Fail "The v0.1.0 package requires Windows x64." }
+$Os = Get-CimInstance Win32_OperatingSystem
+if ($Os) {
+    $Build = [int]$Os.BuildNumber
+    if ($Build -ge 19045) { Ok "OS: $($Os.Caption), build $Build" } else { Fail "Windows 10 22H2 (build 19045) or Windows 11 is required; found build $Build." }
+    $RamGb = [math]::Floor(($Os.TotalVisibleMemorySize * 1KB) / 1GB)
+    if ($RamGb -ge 16) { Ok "Memory: ${RamGb} GB" } elseif ($RamGb -ge 8) { Warn "Memory: ${RamGb} GB; 16 GB is recommended and OCR may be slow." } else { Fail "Memory: ${RamGb} GB; at least 8 GB is required." }
+} else { Fail "Unable to read Windows system information." }
+
+$TargetRoot = [IO.Path]::GetPathRoot($TargetDirectory)
+$DriveName = if ($TargetRoot) { $TargetRoot.Substring(0,1) } else { "" }
+$Drive = if ($DriveName) { Get-PSDrive -Name $DriveName } else { $null }
+if (-not $Drive) {
+    Fail "Target drive $TargetRoot does not exist. Ask before switching to $env:USERPROFILE\Documents\PrivacyGuard\v0.1.0."
+} else {
+    $FreeGb = [math]::Floor($Drive.Free / 1GB)
+    if ($FreeGb -ge 15) { Ok "Free disk on ${TargetRoot}: ${FreeGb} GB" } elseif ($FreeGb -ge 10) { Warn "Free disk on ${TargetRoot}: ${FreeGb} GB; 15 GB is recommended." } else { Fail "Free disk on ${TargetRoot}: ${FreeGb} GB; at least 10 GB is required." }
+}
+
+if ($PSVersionTable.PSVersion.Major -ge 5) { Ok "PowerShell: $($PSVersionTable.PSVersion)" } else { Fail "PowerShell 5.1 or newer is required." }
+if (Get-Command tar.exe -ErrorAction SilentlyContinue) { Ok "Windows tar.exe is available" } else { Fail "tar.exe is required to unpack the model archives. Update Windows before installing." }
+
+$VcRuntime = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
+if ($VcRuntime -and $VcRuntime.Installed -eq 1) {
+    Ok "Microsoft Visual C++ x64 Runtime: $($VcRuntime.Version)"
+} else {
+    Warn "Microsoft Visual C++ 2015-2022 x64 Runtime was not detected. Download only from https://aka.ms/vs/17/release/vc_redist.x64.exe and install it before PrivacyGuard."
+}
+
+$Python = $null
+try { $Python = (& py -3.11 -c "import sys; print(sys.executable)" 2>$null).Trim() } catch {}
+if ($Python) { Ok "Python 3.11 is already installed: $Python" } else { Warn "Python 3.11 is not installed; the runtime package includes prerequisites\python-3.11.9-amd64.exe." }
+
+foreach ($Port in @(8000,8080,8082)) {
+    $Listener = Get-NetTCPConnection -LocalPort $Port -State Listen | Select-Object -First 1
+    if ($Listener) { Warn "Port $Port is already in use by PID $($Listener.OwningProcess)." } else { Ok "Port $Port is available" }
+}
+
+Write-Host "------------------------------------------------"
+Write-Host "Bundled: frontend, Python wheels, Python 3.11 installer, llama.cpp, HaS and PaddleOCR model packages."
+Write-Host "Not required: Node.js, npm, Git, WSL, Docker, NVIDIA GPU, CUDA."
+Write-Host "Result: $Failures failure(s), $Warnings warning(s)"
+if ($Failures -gt 0) { exit 2 }
+
