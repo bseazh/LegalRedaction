@@ -2,6 +2,8 @@
 
 本目录面向第一次安装的用户。建议顺序是：**回答问题 → 环境检查 → 选择档位 → 安装 → 启动 → 验收**。
 
+如果希望由 Agent 完成整个过程，直接复制[一键安装任务书](./copy-paste-agent-prompt.md)中的文字。默认安装路径为 macOS 的 `~/Documents/PrivacyGuard/v0.1.0` 或 Windows 的 `D:\PrivacyGuard\v0.1.0`，并自动在国内镜像与 GitHub 之间切换。
+
 ## 第一步：选择使用档位
 
 | 档位 | 主要能力 | 推荐环境 | 预计本地空间 |
@@ -36,6 +38,7 @@ powershell -ExecutionPolicy Bypass -File scripts\doctor-windows.ps1 -Profile sta
 - [模型权重](./models.md)
 - [standard 离线包](./offline-standard.md)
 - [Agent 安装向导](./agent-guide.md)
+- [可直接复制给 Agent 的安装任务书](./copy-paste-agent-prompt.md)
 - [FAQ](./faq.md)
 
 如选择 standard 离线安装，可直接进入[国内下载页选择 macOS 或 Windows](https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/)。国内镜像不可用时使用 [GitHub Release](https://github.com/bseazh/PrivacyGuard/releases/tag/offline-standard-v0.1.0)。

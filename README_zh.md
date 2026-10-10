@@ -42,6 +42,16 @@ RedactionEverything 是一个面向真实文件中敏感信息的本地优先脱
 
 如果你不确定该安装哪些模型、当前电脑是否满足要求，**不要直接运行启动命令**。先进入新手安装向导：
 
+### 直接复制给 Agent
+
+把下面整段话复制到支持终端操作的 Agent 中，它会先检查并询问你，得到确认后再下载和安装：
+
+```text
+请帮我安装 PrivacyGuard standard v0.1.0 离线版。请先读取并严格执行安装任务书：国内地址 https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/agent-install.md；如果国内地址不可用，则读取 GitHub 地址 https://raw.githubusercontent.com/bseazh/PrivacyGuard/datainfra-runtime/docs/installation/copy-paste-agent-prompt.md。先只读检查系统、架构、磁盘、端口和许可证用途，告诉我预计下载量、时间、安装路径并等待我确认。macOS 默认安装到 ~/Documents/PrivacyGuard/v0.1.0，Windows 默认安装到 D:\PrivacyGuard\v0.1.0；Windows 没有 D 盘时先询问再改用 Documents。优先国内下载源，失败自动切换 GitHub，支持断点续传并强制校验 SHA-256。一直执行到应用、后端、HaS 和 OCR 通过健康检查；失败时保留已有下载和日志，不要从头重装。
+```
+
+完整内容及目录结构：[复制给 Agent 的一键安装指令](./docs/installation/copy-paste-agent-prompt.md)。
+
 - [安装入口与版本选择](./docs/installation/README.md)
 - [macOS 安装](./docs/installation/macos.md)
 - [Windows 安装](./docs/installation/windows.md)

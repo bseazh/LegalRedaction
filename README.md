@@ -42,6 +42,16 @@ RedactionEverything is a local-first redaction workbench for sensitive informati
 
 Do not start by downloading every model. First choose an installation profile and run the read-only environment doctor:
 
+### Copy and paste into an Agent
+
+Paste this into an Agent that can operate a terminal:
+
+```text
+Install PrivacyGuard standard v0.1.0 offline edition on this computer. First read and follow https://privacyguard.snorlaxden.fun/offline-standard-v0.1.0/agent-install.md; if unavailable, use https://raw.githubusercontent.com/bseazh/PrivacyGuard/datainfra-runtime/docs/installation/copy-paste-agent-prompt.md. Perform read-only system, architecture, disk, port, and license-purpose checks first. Show the estimated download size, time, and destination and wait for my confirmation. Use ~/Documents/PrivacyGuard/v0.1.0 on macOS and D:\PrivacyGuard\v0.1.0 on Windows; if D: is absent, ask before using Documents. Prefer the China mirror, fall back to GitHub, resume interrupted downloads, verify SHA-256, then install, start, and validate the app, backend, HaS, and OCR. Preserve completed downloads and logs when troubleshooting instead of restarting from scratch.
+```
+
+Full workflow: [copy-paste Agent installation prompt](./docs/installation/copy-paste-agent-prompt.md).
+
 - [Installation entry](./docs/installation/README.md)
 - [macOS guide](./docs/installation/macos.md)
 - [Windows guide](./docs/installation/windows.md)
