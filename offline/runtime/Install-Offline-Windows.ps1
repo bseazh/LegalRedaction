@@ -25,12 +25,16 @@ function Verify-Component([string]$Path) {
     $Actual = (Get-FileHash -Algorithm SHA256 $Path).Hash.ToLowerInvariant()
     if ($Expected -ne $Actual) { throw "SHA-256 校验失败：$Path" }
 }
+function Invoke-Native([scriptblock]$Command, [string]$FailureMessage) {
+    & $Command
+    if ($LASTEXITCODE -ne 0) { throw "$FailureMessage（退出码：$LASTEXITCODE）" }
+}
 
 foreach ($Name in @($HasName, $OcrName)) {
     $Archive = Find-Component $Name
     Write-Host "校验 $Name ..."
     Verify-Component $Archive
-    tar -xzf $Archive -C $Root
+    Invoke-Native { tar -xzf $Archive -C $Root } "解压模型包失败：$Name"
 }
 
 $Python = $null
@@ -54,12 +58,12 @@ if (-not $Python -or -not (Test-Path $Python)) {
 $AppVenv = Join-Path $Root "backend\.venv-win"
 $OcrVenv = Join-Path $Root "backend\.venv-ocr-win"
 Remove-Item -Recurse -Force $AppVenv,$OcrVenv -ErrorAction SilentlyContinue
-& $Python -m venv $AppVenv
-& $Python -m venv $OcrVenv
-& (Join-Path $AppVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\app") -r (Join-Path $Root "offline\requirements\windows-app.txt")
-& (Join-Path $OcrVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\ocr") -r (Join-Path $Root "offline\requirements\windows-ocr.txt")
+Invoke-Native { & $Python -m venv $AppVenv } "创建应用 Python 环境失败"
+Invoke-Native { & $Python -m venv $OcrVenv } "创建 OCR Python 环境失败"
+Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\app") -r (Join-Path $Root "offline\requirements\windows-app.txt") } "安装应用离线依赖失败"
+Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -m pip install --no-index --find-links (Join-Path $Root "wheelhouse\ocr") -r (Join-Path $Root "offline\requirements\windows-ocr.txt") } "安装 OCR 离线依赖失败"
 
 New-Item -ItemType Directory -Force -Path (Join-Path $Root "backend\data"),(Join-Path $Root "backend\uploads"),(Join-Path $Root "backend\outputs"),(Join-Path $Root "logs") | Out-Null
-& (Join-Path $AppVenv "Scripts\python.exe") -c "import fastapi, fitz, docx; print('应用环境正常')"
-& (Join-Path $OcrVenv "Scripts\python.exe") -c "import paddle, paddleocr; print('OCR 环境正常')"
+Invoke-Native { & (Join-Path $AppVenv "Scripts\python.exe") -c "import fastapi, fitz, docx; print('应用环境正常')" } "应用环境导入检查失败"
+Invoke-Native { & (Join-Path $OcrVenv "Scripts\python.exe") -c "import paddle, paddleocr; print('OCR 环境正常')" } "OCR 环境导入检查失败"
 Write-Host "离线安装完成。运行 .\Start-PrivacyGuard.ps1 启动。"

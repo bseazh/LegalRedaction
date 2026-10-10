@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/offline-windows-smoke.yml"
       - "scripts/check-offline-windows.ps1"
+      - "offline/requirements/windows-*.txt"
       - "offline/runtime/**"
   workflow_dispatch:
 
@@ -126,5 +127,4 @@ jobs:
           path: ${{ runner.temp }}\privacyguard-smoke-logs
           if-no-files-found: warn
           retention-days: 7
-
 
