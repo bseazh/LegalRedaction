@@ -45,7 +45,7 @@ try { $Python = (& py -3.11 -c "import sys; print(sys.executable)" 2>$null).Trim
 if ($Python) { Ok "Python 3.11 is already installed: $Python" } else { Warn "Python 3.11 is not installed; the runtime package includes prerequisites\python-3.11.9-amd64.exe." }
 
 foreach ($Port in @(8000,8080,8082)) {
-    $Listener = Get-NetTCPConnection -LocalPort $Port -State Listen | Select-Object -First 1
+    $Listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($Listener) { Warn "Port $Port is already in use by PID $($Listener.OwningProcess)." } else { Ok "Port $Port is available" }
 }
 
@@ -54,4 +54,3 @@ Write-Host "Bundled: frontend, Python wheels, Python 3.11 installer, llama.cpp, 
 Write-Host "Not required: Node.js, npm, Git, WSL, Docker, NVIDIA GPU, CUDA."
 Write-Host "Result: $Failures failure(s), $Warnings warning(s)"
 if ($Failures -gt 0) { exit 2 }
-
